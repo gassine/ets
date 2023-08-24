@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34018.315
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrafficStopPlugin", "improvedTrafficStop\TrafficStopPlugin.csproj", "{20B28E0E-20D4-46FD-81AA-261E8DDF318C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{788A090D-844A-4BEA-B1A9-7EF287A3D9C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{20B28E0E-20D4-46FD-81AA-261E8DDF318C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20B28E0E-20D4-46FD-81AA-261E8DDF318C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20B28E0E-20D4-46FD-81AA-261E8DDF318C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20B28E0E-20D4-46FD-81AA-261E8DDF318C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E5DFDED0-C6F5-4020-9B67-A7106B47A515}
+	EndGlobalSection
+EndGlobal

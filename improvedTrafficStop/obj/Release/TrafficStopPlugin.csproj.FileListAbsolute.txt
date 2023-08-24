@@ -1,0 +1,11 @@
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\bin\Release\TrafficStopPlugin.net.dll
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\bin\Release\TrafficStopPlugin.net.pdb
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\bin\Release\CitizenFX.Core.Client.dll
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\bin\Release\FivePD.net.dll
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\bin\Release\CitizenFX.Core.Client.xml
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\bin\Release\FivePD.net.xml
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\obj\Release\TrafficStopPlugin.csproj.AssemblyReference.cache
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\obj\Release\TrafficStopPlugin.csproj.CoreCompileInputs.cache
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\obj\Release\TrafficStopPlugin.csproj.CopyComplete
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\obj\Release\TrafficStopPlugin.net.dll
+C:\Users\Alien\Desktop\FIVM Dev\plugins\improvedTrafficStop\improvedTrafficStop\improvedTrafficStop\obj\Release\TrafficStopPlugin.net.pdb
