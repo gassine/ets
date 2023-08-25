@@ -44,6 +44,8 @@ namespace TrafficStopPlugin
 
         public class TIME
         {
+            public static int SECONDS_1 = 1000;
+            public static int SECONDS_5 = 5 * 1000;
             public static int SECONDS_15 = 15 * 1000;
             public static int SECONDS_30 = 30 * 1000;
             public static int SECONDS_45 = 45 * 1000;
@@ -73,7 +75,6 @@ namespace TrafficStopPlugin
             //Check to see if player is on a traffic stop
             if (Utilities.IsPlayerPerformingTrafficStop())
             {
-                //On a traffic stop
                 //Wait till player steps out of the vehicle to show they are about to do the interaction
                 //if (!Game.PlayerPed.IsInVehicle())
                 // First we will check that the traffic stop did not turn into a pursuit right away so we can keep those happening as usual
@@ -85,7 +86,7 @@ namespace TrafficStopPlugin
                 //{
                     // In this section we will determien if the player is currently not on an enhanced traffic stop and proceed to make one
                     // NOTE: In the future, this will have a randomizer to determine at random if this traffic stop will be enhanced or not.
-                    if (!enhancedTrafficStop)
+                    if (enhancedTrafficStop == false || enhancedTrafficStop == null)
                     {
                         // First we will set the OfferedCallout to TRUE to avoid repeating the function. This will cancel automatically once the ped has been arrested or killed.
                         enhancedTrafficStop = true;
@@ -97,6 +98,7 @@ namespace TrafficStopPlugin
 
                         Screen.ShowNotification("Initiated enhanced traffic stop on PED ID: " + tsDriver.NetworkId);
                         await triggerScenario(PERSONALITY.EVIL.SHOOT_WHEN_CLOSE, tsDriver, player);
+                        //await triggerScenario(PERSONALITY.EVIL.ATTACK_WITH_MELEE, tsDriver, player);
 
                         // Now we will assign a personality at random to the ped.
 
@@ -219,7 +221,7 @@ namespace TrafficStopPlugin
             if (PERSONALITY_TYPE == PERSONALITY.EVIL.SHOOT_WHEN_CLOSE)
             {
                 // Here we are setting a random timer for the action to begin.
-                while (World.GetDistance(player.Position, targetPed.Position) > 5f) { await BaseScript.Delay(100); }
+                while (World.GetDistance(player.Position, targetPed.Position) > 3f) { await BaseScript.Delay(100); }
 
                 // TEST To see if he will still keep shooting while running away
                 targetPed.AlwaysKeepTask = true;
@@ -232,11 +234,9 @@ namespace TrafficStopPlugin
                 Vehicle tsVehicle = Utilities.GetVehicleFromTrafficStop();
                 API.RollDownWindow(tsVehicle.Handle, 0);
 
-                //await BaseScript.Delay(1000);
-                //API.RollDownWindow( API.GetVehiclePedIsIn(targetPed.NetworkId, false ));
-                //API.RollDownWindow(tsVehicle.NetworkId, 0);
-                // Now we tell the ped to shoot at the officer
+                // Now we set the shooting rate to be fast
                 targetPed.ShootRate = 1000;
+                // And lastly, we trigger the action to shoot at the player
                 targetPed.Task.VehicleShootAtPed(player);
 
                 // Now we allowing time before the PED flees
@@ -255,12 +255,15 @@ namespace TrafficStopPlugin
                 // With a 50/50 chance, the ped will flee forever until caught, or will get out of the vehicle to fight, or flee on foot.
                 if(randomUpgrade > 50)
                 {
-                    if(randomUpgrade >= 51 && randomUpgrade <= 100)
-                    {
-                        await (Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_15, TIME.SECONDS_30)));
-                    }
                     // Now we will check if we will make him fight or escape on foot
-                    await (Delay(RandomUtils.GetRandomNumber(20000, 30000)));
+                    if (randomUpgrade >= 51 && randomUpgrade <= 100)
+                    {
+                        // First we wait some time from the ped fleeing from the officer
+                        await (Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_15, TIME.SECONDS_30)));
+                        // Now we make the ped get out of the vehicle
+                        targetPed.Task.LeaveVehicle();
+                    }
+                    
                     targetPed.Task.LeaveVehicle();
 
                     await BaseScript.Delay(1500);
@@ -305,15 +308,34 @@ namespace TrafficStopPlugin
             return weapons.SelectRandom();
         }
 
+        /*
         private async Task clearEts()
         {
             // First we verify if the player is currently in a ETS
-            if (enhancedTrafficStop)
+            if (!Utilities.IsPlayerPerformingTrafficStop())
+            {
+                // Now we verify if the player is no longer on a traffic stop.
+                //if (!enhancedTrafficStop)
+                //{
+                    // If these conditions are true, it means that the player just got off an enhanced traffic stop, and we should reset his status so he can take another one.
+                    Screen.ShowNotification("Clearing ETS Variable");
+                    enhancedTrafficStop = false;
+                //}
+            }
+        }
+        */
+
+        
+        private async Task clearEts()
+        {
+            // First we verify if the player is currently in a ETS
+            if (enhancedTrafficStop == true || enhancedTrafficStop == null)
             {
                 // Now we verify if the player is no longer on a traffic stop.
                 if (!Utilities.IsPlayerPerformingTrafficStop()) 
-                { 
+                {
                 // If these conditions are true, it means that the player just got off an enhanced traffic stop, and we should reset his status so he can take another one.
+                Screen.ShowNotification("Clearing ETS Variable");
                 enhancedTrafficStop = false;
                 }
             }
