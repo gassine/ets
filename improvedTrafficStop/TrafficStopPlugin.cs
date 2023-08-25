@@ -41,6 +41,16 @@ namespace TrafficStopPlugin
             }
 
         }
+
+        public class TIME
+        {
+            public static int SECONDS_15 = 15 * 1000;
+            public static int SECONDS_30 = 30 * 1000;
+            public static int SECONDS_45 = 45 * 1000;
+            public static int MINUTES_1 = 1 * 60 * 1000;
+            public static int MINUTES_5 = 5 * 60 * 1000;
+            public static int MINUTES_10 = 10 * 60 * 1000;
+        }
         // END OF PERSONALITY TYPES 
 
 
@@ -50,7 +60,10 @@ namespace TrafficStopPlugin
         // Now we are starting a ticker. This ticket will check every X amount of time if the player is performing a traffic stop or not.
         internal TrafficStopPlugin()
         {
-            Tick += CheckForTrafficStop;
+            // This will triger the enhanced traffic stops
+            Tick += CheckForTrafficStop;    
+            // This will clear the enhanced traffic stop status if player is no longer on TS.
+            Tick += clearEts;
         }
 
 
@@ -74,15 +87,15 @@ namespace TrafficStopPlugin
                     // NOTE: In the future, this will have a randomizer to determine at random if this traffic stop will be enhanced or not.
                     if (!enhancedTrafficStop)
                     {
-
                         // First we will set the OfferedCallout to TRUE to avoid repeating the function. This will cancel automatically once the ped has been arrested or killed.
                         enhancedTrafficStop = true;
 
                         // Now we're going to define who is the driver, and who is the player.
-
+                        
                         Ped tsDriver = Utilities.GetDriverFromTrafficStop();
                         Ped player = Game.PlayerPed;
 
+                        Screen.ShowNotification("Initiated enhanced traffic stop on PED ID: " + tsDriver.NetworkId);
                         await triggerScenario(PERSONALITY.EVIL.SHOOT_WHEN_CLOSE, tsDriver, player);
 
                         // Now we will assign a personality at random to the ped.
@@ -119,15 +132,8 @@ namespace TrafficStopPlugin
                 // Here we might be able to add a section to check for the bug of peds shooting even after being arrested
                 // Something along the lines of checking if the ped is arrested, then have him surrender/stop attacking/shooting
             }
-            else // This else means that the player is currently not performing a traffic stop.
-            {
-                //If player is not on a traffic stop anymore, we will reset our variable so this function can be triggered in the next traffic stop.
-                if (enhancedTrafficStop)
-                {
-                    enhancedTrafficStop = false;
-                }
-            }
 
+            // I don't know what this is for, but seems to be necessary.
             await Task.FromResult(0);
         }
 
@@ -213,7 +219,7 @@ namespace TrafficStopPlugin
             if (PERSONALITY_TYPE == PERSONALITY.EVIL.SHOOT_WHEN_CLOSE)
             {
                 // Here we are setting a random timer for the action to begin.
-                while (World.GetDistance(player.Position, targetPed.Position) > 6f) { await BaseScript.Delay(100); }
+                while (World.GetDistance(player.Position, targetPed.Position) > 5f) { await BaseScript.Delay(100); }
 
                 // TEST To see if he will still keep shooting while running away
                 targetPed.AlwaysKeepTask = true;
@@ -234,7 +240,7 @@ namespace TrafficStopPlugin
                 targetPed.Task.VehicleShootAtPed(player);
 
                 // Now we allowing time before the PED flees
-                await BaseScript.Delay(5000);
+                await BaseScript.Delay(6000);
 
                 // Lastly, the ped flees away
                 targetPed.Task.FleeFrom(player);
@@ -243,11 +249,24 @@ namespace TrafficStopPlugin
                 // TO BE DEVELOPED: Add a randomizer here that will make a 50/50 chance for the ped to decide to continue the pursuit till the end
                 // or stop after a random amount of time. If he stops, he will have a 33/33/33 chance to surrender with his hands up, flee on foot, or shoot at the person pursuing him
                 // Testing: After a random amount of time in pursuit, the ped will get out and start shooting at you.
-                await (Delay(RandomUtils.GetRandomNumber(20000, 30000)));
-                targetPed.Task.LeaveVehicle();
+                int randomUpgrade = RandomUtils.GetRandomNumber(1, 101);
 
-                await BaseScript.Delay(1500);
-                targetPed.Task.ShootAt(player);
+                // Here we will upgrade this scenario with an extra level or randomness.
+                // With a 50/50 chance, the ped will flee forever until caught, or will get out of the vehicle to fight, or flee on foot.
+                if(randomUpgrade > 50)
+                {
+                    if(randomUpgrade >= 51 && randomUpgrade <= 100)
+                    {
+                        await (Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_15, TIME.SECONDS_30)));
+                    }
+                    // Now we will check if we will make him fight or escape on foot
+                    await (Delay(RandomUtils.GetRandomNumber(20000, 30000)));
+                    targetPed.Task.LeaveVehicle();
+
+                    await BaseScript.Delay(1500);
+                    targetPed.Task.ShootAt(player);
+                }
+
                
                 return;
             }
@@ -284,6 +303,20 @@ namespace TrafficStopPlugin
             };
 
             return weapons.SelectRandom();
+        }
+
+        private async Task clearEts()
+        {
+            // First we verify if the player is currently in a ETS
+            if (enhancedTrafficStop)
+            {
+                // Now we verify if the player is no longer on a traffic stop.
+                if (!Utilities.IsPlayerPerformingTrafficStop()) 
+                { 
+                // If these conditions are true, it means that the player just got off an enhanced traffic stop, and we should reset his status so he can take another one.
+                enhancedTrafficStop = false;
+                }
+            }
         }
     }
 }

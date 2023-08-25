@@ -1,0 +1,11 @@
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\bin\Debug\TrafficStopPlugin.net.dll
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\bin\Debug\TrafficStopPlugin.net.pdb
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\bin\Debug\CitizenFX.Core.Client.dll
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\bin\Debug\FivePD.net.dll
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\bin\Debug\CitizenFX.Core.Client.xml
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\bin\Debug\FivePD.net.xml
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\obj\Debug\TrafficStopPlugin.csproj.AssemblyReference.cache
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\obj\Debug\TrafficStopPlugin.csproj.CoreCompileInputs.cache
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\obj\Debug\TrafficStopPlugin.csproj.CopyComplete
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\obj\Debug\TrafficStopPlugin.net.dll
+C:\Users\Alien\Documents\GitHub\ets\improvedTrafficStop\obj\Debug\TrafficStopPlugin.net.pdb
