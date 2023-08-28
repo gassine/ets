@@ -23,7 +23,7 @@ namespace TrafficStopPlugin
 
             public class EVIL
             {
-                public static int FIST_FIGHT = 200;
+                public static int FLEE_THEN_SHOOT = 200;
                 public static int SHOOT_WHEN_CLOSE = 201;
                 public static int SHOOT_WHEN_OFFICER_IS_OUT = 202;
                 public static int SHOOT_AT_RANDOM_TIME = 203;
@@ -50,6 +50,7 @@ namespace TrafficStopPlugin
             public static int SECONDS_30 = 30 * 1000;
             public static int SECONDS_45 = 45 * 1000;
             public static int MINUTES_1 = 1 * 60 * 1000;
+            public static int MINUTES_3 = 3 * 60 * 1000;
             public static int MINUTES_5 = 5 * 60 * 1000;
             public static int MINUTES_10 = 10 * 60 * 1000;
         }
@@ -111,7 +112,8 @@ namespace TrafficStopPlugin
                     //await triggerScenario(PERSONALITY.EVIL.ATTACK_WITH_MELEE, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.EVIL.SHOOT_FROM_START, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.EVIL.SHOOT_AT_RANDOM_TIME, tsDriver, player, tsVehicle);
-                    await triggerScenario(PERSONALITY.EVIL.SHOOT_WHEN_OFFICER_IS_OUT, tsDriver, player, tsVehicle);
+                    //await triggerScenario(PERSONALITY.EVIL.SHOOT_WHEN_OFFICER_IS_OUT, tsDriver, player, tsVehicle);
+                    await triggerScenario(PERSONALITY.EVIL.FLEE_THEN_SHOOT, tsDriver, player, tsVehicle);
 
                 }
 
@@ -145,7 +147,7 @@ namespace TrafficStopPlugin
             else if (randomPersonality > 80 && randomPersonality <= 100) // And if the result is between 90 and 100 it will be evil
             {
                 if (randomReaction >= 1 && randomReaction <= 30) return PERSONALITY.EVIL.SHOOT_WHEN_CLOSE;
-                else if (randomReaction >= 31 && randomReaction <= 40) return PERSONALITY.EVIL.FIST_FIGHT;
+                else if (randomReaction >= 31 && randomReaction <= 40) return PERSONALITY.EVIL.FLEE_THEN_SHOOT;
                 else if (randomReaction >= 41 && randomReaction <= 60) return PERSONALITY.EVIL.SHOOT_AT_RANDOM_TIME;
                 else if (randomReaction >= 61 && randomReaction <= 70) return PERSONALITY.EVIL.SHOOT_FROM_START;
                 else if (randomReaction >= 81 && randomReaction <= 90) return PERSONALITY.EVIL.ATTACK_WITH_MELEE;
@@ -158,7 +160,6 @@ namespace TrafficStopPlugin
 
         private async Task triggerScenario(int PERSONALITY_TYPE, Ped targetPed, Ped player, Vehicle targetVehicle)
         {
-            // Now we will check which personality profile do we have.
 
             /* -------------------------------------------------
                -------------------------------------------------
@@ -166,48 +167,43 @@ namespace TrafficStopPlugin
                -------------------------------------------------
                ------------------------------------------------- */
 
-            if (PERSONALITY_TYPE == PERSONALITY.EVIL.FIST_FIGHT) {
-                // In this scenario, the ped will get out of the vehicle as soon as the officer gets out and will charge at him with his bare fist.
-
-                // Here we are setting a random timer for the action to begin.
-                //await( Delay(RandomUtils.GetRandomNumber(1000, 30000)));
-                targetPed.Task.LeaveVehicle();
-
-                // Now we allowing time for the driver to get out of the vehicle so the instruction can execute.
-                await BaseScript.Delay(1500);
-                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
-
-                // Lastly, we fight!
-                targetPed.Task.FightAgainst(player);
-
-                // This whole block is in case the PED kills the officer, it will flee away in his car after 20 seconds
-                await (BaseScript.Delay(TIME.SECONDS_20));
-                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
-
-                targetPed.Task.EnterVehicle(targetVehicle, VehicleSeat.Driver);
-                await (BaseScript.Delay(1500));
-                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
-                targetPed.Task.FleeFrom(player);
-
-                return;
-            }
-
             if(PERSONALITY_TYPE == PERSONALITY.EVIL.ATTACK_WITH_MELEE)
             {
+                // SCENARIO DESCRIPTION:
+                // In this scenario, the PED will attack the player at a random moment with either their fist or a melee weapon.
                 // Here we are setting a random timer for the action to begin.
                 await( Delay(RandomUtils.GetRandomNumber(1000, 30000)));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
 
-                // First we equip a random melee weapon
-                targetPed.Weapons.Give(GetMeleeWeapon(), 1, true, true);
+                // Here we will do a randomizer to determine if the ped will attack with a melee weapon, or with their bare fist.
+                int randomNumber = RandomUtils.GetRandomNumber(1, 101);
 
-                // Now we ask the ped to leave the vehicle
-                targetPed.Task.LeaveVehicle();
+                // 50/50 Chance of attacking with a melee weapon or fist
+                if (randomNumber > 50)
+                {
+                    // Here we will check if the PED is in a vehicle. If they are, they can get a bigger melee weapon
+                    if (targetPed.IsInVehicle())
+                    {
+                        targetPed.Weapons.Give(GetMeleeWeapon(), 1, true, true);
+                    }
+                    else
+                    { // If they are not, they can only get a concealable blade.
+                        targetPed.Weapons.Give(GetConcealedBlade(), 1, true, true);
+                    }
+                }
 
-                // Now we allowing time for the driver to get out of the vehicle so the instruction can execute.
-                await BaseScript.Delay(1500);
-                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+                // Here we will check if the PED is still in the vehicle. If he is, we will take them out of the car.
+                if (targetPed.IsInVehicle())
+                {
+                    // Now we ask the ped to leave the vehicle
+                    targetPed.Task.LeaveVehicle();
+
+                    // Now we allowing time for the driver to get out of the vehicle so the instruction can execute.
+                    await BaseScript.Delay(1500);
+                    if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+                }
 
                 // Lastly, we fight!
                 targetPed.Task.FightAgainst(player);
@@ -217,8 +213,15 @@ namespace TrafficStopPlugin
                 await (BaseScript.Delay(TIME.SECONDS_20));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
+                // Here we will make the suspect run back to their car, otherwise they will just walk to it and might miss getting back before fleeing.
+                targetPed.Task.ClearAll();
+                targetPed.Task.RunTo(targetVehicle.Position);
+                await (BaseScript.Delay(3000));
+                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+                targetPed.Task.ClearAll();
                 targetPed.Task.EnterVehicle(targetVehicle, VehicleSeat.Driver);
-                await (BaseScript.Delay(1500));
+                await (BaseScript.Delay(3000));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
                 targetPed.Task.FleeFrom(player);
 
@@ -445,7 +448,7 @@ namespace TrafficStopPlugin
                     { // 80% chance of it getting a handgun
                         targetPed.Weapons.Give(GetConcealedBlade(), 1, true, true);
                     }
-                    if (randomNumber > 30 && randomNumber <= 80)
+                    else if (randomNumber > 30 && randomNumber <= 80)
                     { // 80% chance of it getting a handgun
                         targetPed.Weapons.Give(getHandgun(), 200, true, true);
                     }
@@ -478,7 +481,7 @@ namespace TrafficStopPlugin
                 {
                     // Now we will make the ped get out of the car
                     targetPed.Task.LeaveVehicle();
-                    await (BaseScript.Delay(1500));
+                    await (BaseScript.Delay(3000));
                     if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
                 }
 
@@ -506,7 +509,131 @@ namespace TrafficStopPlugin
             ////////////////
             // NEXT SCENARIO
             ////////////////
-            
+
+            if (PERSONALITY_TYPE == PERSONALITY.EVIL.FLEE_THEN_SHOOT)
+            {
+                // The goal of this scenario is for the ped to shoot deeper into the interaction with the officer if certain conditions apply.
+                // This is to stop the PED from getting distracted with world events
+                targetPed.AlwaysKeepTask = true;
+                targetPed.BlockPermanentEvents = true;
+
+                // Here we will determine if the PED will flee at a random time, when the officer gets closer to the window, or when the officer leaves their vehicle
+                int randomNumber = RandomUtils.GetRandomNumber(1, 101);
+
+                if(randomNumber <= 33)
+                { // The first 33% chance will be that the ped will wait a random amount of time
+                  // Here we are going to do a random timer for the event to start. This will allow time to develop for the traffic stop.
+                    await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_15, TIME.SECONDS_30)));
+                    if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+                } 
+                else if(randomNumber > 33 && randomNumber <= 66) // The second 50% will wait for the officer to get close to the window
+                {
+                    while (true)
+                    {
+                        // For optimization purposes
+                        await BaseScript.Delay(1000);
+                        // This is done to avoid the script getting stuck on loop if the player glitches the system activating too many traffic stops too close
+                        // If they do that, the mess the PED information and the script loses the reference of which PED it is using.
+                        if (!Utilities.IsPlayerPerformingTrafficStop() || isPedEmpty(targetPed)) { return; }
+
+                        // Here we are asking how far is the player from the ped. If it is too far we will ask again in 1 second, if not, we will continue with the function.
+                        if (World.GetDistance(player.Position, targetPed.Position) <= 3f) { break; }
+
+                    }
+                } 
+                else
+                {
+                    while (Game.PlayerPed.IsInVehicle())
+                    {
+                        // This is done to avoid the script getting stuck on loop if the player glitches the system activating too many traffic stops too close
+                        // If they do that, the mess the PED information and the script loses the reference of which PED it is using.
+                        if (!Utilities.IsPlayerPerformingTrafficStop() || isPedEmpty(targetPed)) { return; }
+
+                        await BaseScript.Delay(1000);
+                    }
+                }
+
+                // Now we need to equip the ped with a gun, we will assign one based on odds and the status of the scenario
+                // Here we need to check if the ped is in a car or is on foot
+                if (targetPed.IsInVehicle())
+                {
+                    // This first check is in case the ped is in a different vehicle than the one he was driving (this could mean that they have been arrested)
+                    if (targetPed.CurrentVehicle.NetworkId != targetVehicle.NetworkId)
+                    {
+                        return;
+                    }
+
+                    // In this section we will determine if the ped will get a handgun or an assault rifle (only available when in vehicle).
+                    if (randomNumber > 1 && randomNumber <= 80)
+                    { // 80% chance of it getting a handgun
+                        targetPed.Weapons.Give(getHandgun(), 200, true, true);
+                    }
+                    else
+                    { // 20% chance of it getting an assault rifle instead
+                        targetPed.Weapons.Give(getAssaultRifle(), 200, true, true);
+                    }
+                }
+                else
+                {   // Here we are checking if the ped is currently cuffed
+                    if (!targetPed.IsCuffed)
+                    {
+                        targetPed.Weapons.Give(getHandgun(), 200, true, true);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
+                // Now we will make the PED flee in whatever he is.
+                targetPed.Task.FleeFrom(player);
+
+                // We will keep the PED fleeing for a random amount of time
+                await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_30, TIME.MINUTES_1)));
+                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+                if (targetPed.IsInVehicle())
+                {
+                    // Now we will make the ped get out of the car
+                    targetPed.Task.LeaveVehicle();
+                    await (BaseScript.Delay(3000));
+                    if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+                    // Now we will add an option where the ped might run on foot, or start the confrontation right away
+                    if (randomNumber < 50)
+                    {
+                        targetPed.Task.ClearAll();
+                        targetPed.Task.FleeFrom(player);
+                        await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_15, TIME.SECONDS_30)));
+                        if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+                    }
+                }
+
+                // Now we set the shooting rate to be fast
+                targetPed.ShootRate = 1000;
+                // We are getting ready to shoot, so we will cancel all other tasks.
+                targetPed.Task.ClearAll();
+                await (BaseScript.Delay(1000));
+                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+                // And lastly, we trigger the action to shoot at the player
+                targetPed.Task.ShootAt(player);
+
+                await (BaseScript.Delay(TIME.SECONDS_20));
+                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+
+                // This whole block is in case the PED kills the officer, it will flee away in his car after 20 seconds
+                targetPed.Task.EnterAnyVehicle(VehicleSeat.Driver);
+                await (BaseScript.Delay(3000));
+                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+                targetPed.Task.FleeFrom(player);
+                return;
+            }
+
+            ////////////////
+            // NEXT SCENARIO
+            ////////////////
         }
 
         private bool isPedEmpty(Ped targetPed)
@@ -521,8 +648,6 @@ namespace TrafficStopPlugin
         {
             List<WeaponHash> weapons = new List<WeaponHash>()
             {
-                WeaponHash.Knife,
-                WeaponHash.SwitchBlade,
                 WeaponHash.Bat,
                 WeaponHash.Wrench,
                 WeaponHash.Bottle,
@@ -530,6 +655,7 @@ namespace TrafficStopPlugin
                 WeaponHash.GolfClub,
                 WeaponHash.PoolCue,
                 WeaponHash.Machete,
+                WeaponHash.Hatchet,
             };
 
             return weapons.SelectRandom();
