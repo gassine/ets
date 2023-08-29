@@ -115,10 +115,10 @@ namespace TrafficStopPlugin
                     //await triggerScenario(PERSONALITY.EVIL.SHOOT_AT_RANDOM_TIME, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.EVIL.SHOOT_WHEN_OFFICER_IS_OUT, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.EVIL.FLEE_THEN_SHOOT, tsDriver, player, tsVehicle);
-                    //await triggerScenario(PERSONALITY.COWARD.VEHICLE_FLEE_AFTER_OFFICER_EXITS_VEHICLE, tsDriver, player, tsVehicle);
+                    await triggerScenario(PERSONALITY.COWARD.VEHICLE_FLEE_AFTER_OFFICER_EXITS_VEHICLE, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.COWARD.FLEE_ON_FOOT, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.COWARD.VEHICLE_FLEE_AT_RANDOM, tsDriver, player, tsVehicle);
-                    await triggerScenario(PERSONALITY.COWARD.AIM_SUICIDE, tsDriver, player, tsVehicle);
+                    //await triggerScenario(PERSONALITY.COWARD.AIM_SUICIDE, tsDriver, player, tsVehicle);
 
                 }
 
@@ -644,7 +644,7 @@ namespace TrafficStopPlugin
 
             if (PERSONALITY_TYPE == PERSONALITY.COWARD.VEHICLE_FLEE_AFTER_OFFICER_EXITS_VEHICLE)
             {
-                // The goal of this scenario is for the ped to shoot deeper into the interaction with the officer if certain conditions apply.
+                // The goal of this scenario is for the ped to flee after the officer either leaves the vehicle or when they are getting closer to the window
                 // This is to stop the PED from getting distracted with world events
                 targetPed.AlwaysKeepTask = true;
                 targetPed.BlockPermanentEvents = true;
@@ -652,8 +652,6 @@ namespace TrafficStopPlugin
                 // Here we will determine if the PED will flee at a random time, when the officer gets closer to the window, or when the officer leaves their vehicle
                 int randomNumber = RandomUtils.GetRandomNumber(1, 101);
 
-                // TEST
-                randomNumber = 60;
                 if (randomNumber <= 50)
                 { // 50% Chance for the PED to flee once the officer gets close to the window
                     while (true)
@@ -683,15 +681,14 @@ namespace TrafficStopPlugin
 
                 // Now we will make the PED flee from player
                 targetPed.Task.FleeFrom(player);
+                // We will keep the PED fleeing for a random amount of time
+                await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_30, TIME.MINUTES_3)));
+                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
                 // Now we will do a second randomizer where we will determine if the pursuit will be until the PED is stopped, or if they will get out of the vehicle to flee on foot
                 // We will use MOD for optimization
-                if(randomNumber % 2 == 0)
+                if (randomNumber % 2 == 0)
                 {
-                    // We will keep the PED fleeing for a random amount of time
-                    await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_30, TIME.MINUTES_3)));
-                    if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
-
                     if (targetPed.IsInVehicle())
                     {
                         // Now we will make the ped get out of the car
@@ -700,11 +697,46 @@ namespace TrafficStopPlugin
                         if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
                         // Now the ped will flee on foot
+
+                        // The following blocks are to create a sense of desperation from the PED running away
                         targetPed.Task.ClearAll();
-                        targetPed.Task.FleeFrom(player);
+                        targetPed.Task.ReactAndFlee(player);
+                        await (BaseScript.Delay(5000));
+                        if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+                        targetPed.Task.ClearAll();
+                        targetPed.Task.ReactAndFlee(player);
+                        await (BaseScript.Delay(5000));
+                        if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+                        targetPed.Task.ClearAll();
+                        targetPed.Task.ReactAndFlee(player);
+                        await (BaseScript.Delay(5000));
+                        if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
                     }
                 }
 
+                if (randomNumber >= 1 && randomNumber < 33)
+                {   // In this case, ped will surrender
+                    targetPed.Task.ClearAll();
+                    targetPed.Task.HandsUp(60000);
+                }
+                else if (randomNumber >= 33 && randomNumber <= 66)
+                { // In this case, ped will commit suicide
+                    targetPed.Weapons.Give(WeaponHash.Pistol, 200, true, true);
+                    targetPed.Task.ClearAll();                   
+                    targetPed.Task.HandsUp(2000);
+                    await (BaseScript.Delay(2000));
+                    targetPed.Task.PlayAnimation("mp_suicide", "pistol", 8f, -1, AnimationFlags.StayInEndFrame);
+                    await (BaseScript.Delay(700));
+                    API.SetPedShootsAtCoord(targetPed.Handle, targetPed.Position.X, targetPed.Position.Y + 3, targetPed.Position.Z, true);
+                    await (BaseScript.Delay(1000));
+                    targetPed.Kill();
+                }
+                else
+                {
+                    targetPed.Task.ReactAndFlee(player);
+                }
                 return;
             }
 
@@ -810,20 +842,13 @@ namespace TrafficStopPlugin
                     await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_5, TIME.SECONDS_15)));
                     if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
-                    //API.TaskPlayAnim(targetPed, "mp_suicide", "pistol", 4.0f, 4.0f, 1, 2, 0.5f, false, false, false);
-                    //await targetPed.Task.PlayAnimation("mp_suicide", "pistol", 1.0f, 1.0f, -1, 2, 1.0f);
-                    //targetPed.Task.PlayAnimation("mp_suicide", "pistol", 6f, -1, AnimationFlags.StayInEndFrame);
                     targetPed.Task.ClearAll();
                     targetPed.Task.PlayAnimation("mp_suicide", "pistol", 8f, -1, AnimationFlags.StayInEndFrame);
                     await (BaseScript.Delay(700));
                     API.SetPedShootsAtCoord(targetPed.Handle, targetPed.Position.X, targetPed.Position.Y+3, targetPed.Position.Z, true);
                     await (BaseScript.Delay(1000));
-                    //API.SetPedShootsAtCoord(targetPed.Handle, targetPed.Position.X, targetPed.Position.Y, targetPed.Position.Z, true);
                     targetPed.Kill();
 
-                    //await (BaseScript.Delay(10000));
-                    //targetPed.Kill();
-                    //targetPed.Task.ShootAt(targetPed);
                 }
 
                 return;
