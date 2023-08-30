@@ -61,13 +61,18 @@ namespace TrafficStopPlugin
         }
         // END OF PERSONALITY TYPES 
 
+        public class ANIMATION_TYPE
+        {
+            // This is just a recollection of the animation type dictionaries that we might end up using.
+            public static string COMPLAIN = "misscommon@response";
+        }
 
         // Here we are setting that variable where we will track if the user is on a callout or not.
         private bool enhancedTrafficStop = false;
         Ped tsDriver = null;
         Vehicle tsVehicle = null;
         Ped player = null;
-        int counter = 0;
+        //int counter = 0; // UNCOMMENT THIS FOR TESTING PURPOSES
 
         // Now we are starting a ticker. This ticket will check every X amount of time if the player is performing a traffic stop or not.
         internal TrafficStopPlugin()
@@ -82,9 +87,12 @@ namespace TrafficStopPlugin
         // In this function we will check if the user is currently on a traffic stop
         public async Task CheckForTrafficStop()
         {
-            counter++;
-            Screen.ShowNotification("CHECKING NEW ETS #" + counter);
-            Debug.WriteLine("CHECKING NEW ETS #" + counter);
+            // TEST BLOCK
+            //counter++;
+            //Screen.ShowNotification("CHECKING NEW ETS #" + counter);
+            //Debug.WriteLine("CHECKING NEW ETS #" + counter);
+            // END TEST BLOCK
+
             // This is to avoid ticks getting triggered 1000 times a second.
             await (BaseScript.Delay(5000));
 
@@ -111,8 +119,14 @@ namespace TrafficStopPlugin
                         return;
                     }
 
-                    Screen.ShowNotification("Initiated enhanced traffic stop on PED ID: " + tsDriver.NetworkId);
-                    Debug.WriteLine("Initiated enhanced traffic stop on PED ID: " + tsDriver.NetworkId);
+                    // Now we will trigger the enhanced traffic stop
+                    await triggerScenario(getRandomPersonality(), tsDriver, player, tsVehicle);
+
+                    // TEST BLOCK
+                    //int scenarioNumber = getRandomPersonality();
+                    //Screen.ShowNotification("Initiated enhanced traffic stop on PED ID: " + tsDriver.NetworkId);
+                    //Screen.ShowNotification("Scenario Number: " + scenarioNumber);
+                    //await triggerScenario(scenarioNumber, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.EVIL.SHOOT_WHEN_CLOSE, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.EVIL.ATTACK_WITH_MELEE, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.EVIL.SHOOT_FROM_START, tsDriver, player, tsVehicle);
@@ -123,10 +137,10 @@ namespace TrafficStopPlugin
                     //await triggerScenario(PERSONALITY.COWARD.FLEE_ON_FOOT, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.COWARD.VEHICLE_FLEE_AT_RANDOM, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.COWARD.AIM_SUICIDE, tsDriver, player, tsVehicle);
-                    //await triggerScenario(PERSONALITY.LAWFUL.EXIT_VEHICLE, tsDriver, player, tsVehicle);\
+                    //await triggerScenario(PERSONALITY.LAWFUL.EXIT_VEHICLE, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.LAWFUL.WALK_TOWARDS_OFFICER, tsDriver, player, tsVehicle);
                     //await triggerScenario(PERSONALITY.LAWFUL.WALK_AROUND, tsDriver, player, tsVehicle);
-                    await triggerScenario(PERSONALITY.EVIL.WALK_TOWARDS_SHOOTING, tsDriver, player, tsVehicle);
+                    //await triggerScenario(PERSONALITY.EVIL.WALK_TOWARDS_SHOOTING, tsDriver, player, tsVehicle);
 
                 }
 
@@ -1045,11 +1059,15 @@ namespace TrafficStopPlugin
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
                 // Now we will make the ped face the player.
                 targetPed.Task.TurnTo(player);
-                await (BaseScript.Delay(3000));
+                await (BaseScript.Delay(1500));
+                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
+                targetPed.Task.PlayAnimation(ANIMATION_TYPE.COMPLAIN, getComplainAnimation(), 8f, -1, AnimationFlags.None);
+                await (BaseScript.Delay(2000));
+                if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+
                 targetPed.Task.ClearAll();
                 targetPed.Task.LookAt(player, 60000);
-
-
                 return;
             }
 
@@ -1280,6 +1298,20 @@ namespace TrafficStopPlugin
             };
 
             return weapons.SelectRandom();
+        }
+
+        private string getComplainAnimation()
+        {
+            List<string> complainAnimation = new List<string>()
+            {
+            "bring_it_on",
+            "give_me_a_break",
+            "numbnuts",
+            "screw_you",
+            "threaten",
+            };
+
+            return complainAnimation.SelectRandom();
         }
 
         private async Task clearEts()
