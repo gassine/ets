@@ -331,10 +331,7 @@ namespace TrafficStopPlugin
                             await (Delay(RandomUtils.GetRandomNumber(10000, 15000)));
                             if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
-                            if (!targetPed.IsCuffed)
-                            {
-                                targetPed.Task.ReactAndFlee(player);
-                            }
+                            targetPed.Task.ReactAndFlee(player);
                         } 
                         else if (randomUpgrade >= 71 && randomUpgrade <= 75)
                         {
