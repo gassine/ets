@@ -167,7 +167,7 @@ namespace TrafficStopPlugin
                 if (randomReaction >= 1 && randomReaction <= 25) return PERSONALITY.LAWFUL.STAY;
                 else if (randomReaction > 25 && randomReaction <= 50) return PERSONALITY.LAWFUL.EXIT_VEHICLE;
                 else if (randomReaction > 50 && randomReaction <= 75) return PERSONALITY.LAWFUL.WALK_TOWARDS_OFFICER;
-                else if (randomReaction > 50 && randomReaction <= 100) return PERSONALITY.LAWFUL.WALK_AROUND;
+                else if (randomReaction > 75 && randomReaction <= 100) return PERSONALITY.LAWFUL.WALK_AROUND;
             }   
             else if (randomPersonality > 50 && randomPersonality <= 80) // 30% chance of being a coward
             {
