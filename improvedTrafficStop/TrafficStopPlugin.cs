@@ -4,6 +4,7 @@ using CitizenFX.Core.UI;
 using FivePD.API;
 using FivePD.API.Utils;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace TrafficStopPlugin
@@ -92,7 +93,7 @@ namespace TrafficStopPlugin
             //Screen.ShowNotification("CHECKING NEW ETS #" + counter);
             //Debug.WriteLine("CHECKING NEW ETS #" + counter);
             // END TEST BLOCK
-
+            
             // This is to avoid ticks getting triggered 1000 times a second.
             await (BaseScript.Delay(5000));
 
@@ -202,7 +203,8 @@ namespace TrafficStopPlugin
                -------------------------------------------------
                ------------------------------------------------- */
 
-            if(PERSONALITY_TYPE == PERSONALITY.EVIL.ATTACK_WITH_MELEE)
+
+            if (PERSONALITY_TYPE == PERSONALITY.EVIL.ATTACK_WITH_MELEE)
             {
                 // SCENARIO DESCRIPTION:
                 // In this scenario, the PED will attack the player at a random moment with either their fist or a melee weapon.
@@ -811,6 +813,8 @@ namespace TrafficStopPlugin
                     }
                 }
 
+                // Now we will send a message alerting the player that the ped is about to flee
+                Screen.ShowSubtitle(getFleeingMessage());
                 // Now we will make the PED flee from player
                 targetPed.Task.FleeFrom(player);
                 // We will keep the PED fleeing for a random amount of time
@@ -907,6 +911,8 @@ namespace TrafficStopPlugin
                 await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_30, TIME.MINUTES_1)));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
+                // Now we will send a message alerting the player that the ped is about to flee
+                Screen.ShowSubtitle(getFleeingMessage());
                 // Now we will make the ped flee
                 targetPed.Task.FleeFrom(player);
 
@@ -1018,11 +1024,11 @@ namespace TrafficStopPlugin
                 if (randomNumber <= 33)
                 { // The first 33% chance will be that the ped will wait a random amount of time
                   // Here we are going to do a random timer for the event to start. This will allow time to develop for the traffic stop.
-                    await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_15, TIME.SECONDS_30)));
+                    await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_5, TIME.SECONDS_30)));
                     if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
                     
                 }
-                else if (randomNumber > 33 && randomNumber <= 66) // The second 50% will wait for the officer to get close to the window
+                else if (randomNumber > 33 && randomNumber <= 66) // The second 33% will wait for the officer to get close to the window
                 {
                     while (true)
                     {
@@ -1037,7 +1043,7 @@ namespace TrafficStopPlugin
 
                     }
                 }
-                else
+                else // This one will wait for the player to get out of their vehicle
                 {
                     while (Game.PlayerPed.IsInVehicle())
                     {
@@ -1052,9 +1058,14 @@ namespace TrafficStopPlugin
                 // We are adding this code here because all three scenarios will result in the same action.
                 // Now we will make the PED leave the vehicle
                 targetPed.Task.LeaveVehicle();
-                await (BaseScript.Delay(1500));
+                await (BaseScript.Delay(1000));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
+                // Now we will make the ped walk towards teh officer
+                targetPed.Task.GoTo(player.Position);
+                await (BaseScript.Delay(1500));
                 // Now we will make the ped face the player.
+                targetPed.Task.ClearAll();
+                await (BaseScript.Delay(500));
                 targetPed.Task.TurnTo(player);
                 await (BaseScript.Delay(1500));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
@@ -1309,6 +1320,42 @@ namespace TrafficStopPlugin
             };
 
             return complainAnimation.SelectRandom();
+        }
+
+        private string getFleeingMessage()
+        {
+            List<string> fleeingMessages = new List<string>()
+            {
+            "~r~Suspect:~s~ YOU'LL NEVER CATCH ME ALIVE!!",
+            "~r~Suspect:~s~ DEFUND THE POLICE!!",
+            "~r~Suspect:~s~ I DIDN'T DO NOTHING!!!",
+            "~r~Suspect:~s~ WHY YOU PULLING ME OVER FOOL!??",
+            "~r~Suspect:~s~ GO PULL YOUR MAMA OVER!",
+            "~r~Suspect:~s~ CATCH ME IF YOU CAN!",
+            "~r~Suspect:~s~ TOO SLOW GRANDMA!",
+            "~r~Suspect:~s~ CHINGA A TU MADRE CABRON!!!",
+            "~r~Suspect:~s~ I'M NOT DRIVING I'M TRAVELLING!",
+            "~r~Suspect:~s~ YOU CAN'T STOP ME!",
+            "~r~Suspect:~s~ HELP!! POLICE BRUTALITY!",
+            "~r~Suspect:~s~ I CAN'T STOP I'M SHITTING MY PANTS!!",
+            "~r~Suspect:~s~ VETE A LA VERGA!",
+            "~r~Suspect:~s~ You really thought you'd catch me huh?",
+            "~r~Suspect:~s~ I'M SORRY I'M GONNA BE LATE FOR WORK!",
+            "~r~Suspect:~s~ NO NO NO NO NO!!!",
+            "~r~Suspect:~s~ I'M TO PRETTY TO GO TO JAIL!",
+            "~r~Suspect:~s~ I CAN'T GO TO JAIL!!!",
+            "~r~Suspect:~s~ I'M SORRY!!!",
+            "~r~Suspect:~s~ SCREW YOU!",
+            "~p~Suspect says to his phone:~s~ Yooo stream! Watch this!",
+            "~p~Suspect shows you the middle finger and drives off",
+            "~p~Suspect starts blasting loud heavy metal and drives off",
+            "~p~Suspect starts blasting loud reggaeton and drives off",
+            "~p~Suspect starts blasting loud music and drives off",
+            "~y~AMBIENT:~s~ You hear a vehicle driving off",
+            "~y~AMBIENT:~s~ You hear some tires screeching",
+            };
+
+            return fleeingMessages.SelectRandom();
         }
 
         private async Task clearEts()
