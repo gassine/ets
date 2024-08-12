@@ -204,7 +204,7 @@ namespace TrafficStopPlugin
                     }
                     */
 
-
+                    //
                     // Now we will trigger the enhanced traffic stop
                     await triggerScenario(randomPersonality, tsDriver, player, tsVehicle);
 
