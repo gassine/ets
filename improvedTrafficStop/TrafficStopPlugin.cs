@@ -1466,6 +1466,64 @@ namespace TrafficStopPlugin
             return fleeingMessages.SelectRandom();
         }
 
+        private string getFleeingAfterArrestMessage()
+        {
+            List<string> fleeingMessages = new List<string>()
+            {
+                "~r~Suspect:~s~ I can't go back to jail!",
+                "~r~Suspect:~s~ They’re gonna kill me in there!",
+                "~r~Suspect:~s~ This isn't happening!",
+                "~r~Suspect:~s~ I’m innocent! I didn’t do anything!",
+                "~r~Suspect:~s~ You’ll never take me alive!",
+                "~r~Suspect:~s~ I can’t let them find out!",
+                "~r~Suspect:~s~ I have to see my family one last time!",
+                "~r~Suspect:~s~ This is all a big mistake!",
+                "~r~Suspect:~s~ You don’t understand, I have no choice!",
+                "~r~Suspect:~s~ I’m not going down for this!",
+                "~r~Suspect:~s~ I knew I shouldn’t have trusted you!",
+                "~r~Suspect:~s~ I have to warn them before it’s too late!",
+                "~r~Suspect:~s~ You can’t hold me here!",
+                "~r~Suspect:~s~ They’ll never find me!",
+                "~r~Suspect:~s~ This can’t be happening to me!",
+                "~r~Suspect:~s~ I have to finish what I started!",
+                "~r~Suspect:~s~ You won’t catch me!",
+                "~r~Suspect:~s~ I can’t let them win!",
+                "~r~Suspect:~s~ I have nothing left to lose!",
+                "~r~Suspect:~s~ I need to disappear!",
+            };
+
+            return fleeingMessages.SelectRandom();
+        }
+
+        private string getWalkingAfterArrestMessage()
+        {
+            List<string> fleeingMessages = new List<string>()
+            {
+                "~r~Suspect:~s~ Just taking a quick stroll, no big deal!",
+                "~r~Suspect:~s~ I'll be right back, just grabbing something!",
+                "~r~Suspect:~s~ Don't worry, I'm not going far!",
+                "~r~Suspect:~s~ I’m just going to get some air!",
+                "~r~Suspect:~s~ I’ll be back in a minute, promise!",
+                "~r~Suspect:~s~ I just need to stretch my legs!",
+                "~r~Suspect:~s~ I think I left my phone over there!",
+                "~r~Suspect:~s~ Just need to check on something real quick!",
+                "~r~Suspect:~s~ I forgot something in my car!",
+                "~r~Suspect:~s~ I’ll be right back, don’t worry!",
+                "~r~Suspect:~s~ I’m just going to the restroom!",
+                "~r~Suspect:~s~ Hold on, I just need to make a call!",
+                "~r~Suspect:~s~ I need to speak to my lawyer real quick!",
+                "~r~Suspect:~s~ I’m just going to grab a snack!",
+                "~r~Suspect:~s~ I’m just heading to the office, be right back!",
+                "~r~Suspect:~s~ I’m just stepping out for a moment!",
+                "~r~Suspect:~s~ I need to check on my friend real quick!",
+                "~r~Suspect:~s~ I’ll be back before you know it!",
+                "~r~Suspect:~s~ I’m just going to see what’s going on over there!",
+                "~r~Suspect:~s~ No worries, just taking a little walk!",
+            };
+
+            return fleeingMessages.SelectRandom();
+        }
+
         private string getRandomCity()
         {
             List<string> allCities = new List<string>()
@@ -1949,6 +2007,31 @@ namespace TrafficStopPlugin
                         // TEST: First we are going to check if the ped is in cuffs or not. If it is in cuffs we'll let them be as we don't want to wander around nor cancel the cuffing animation
                         if (tsDriver.IsCuffed) // ALTERNATIVELY this can happen in the beginning so it doesn't clear all tasks cancelling as well the effects of putting the cuffs
                         {
+                            int randomNumber = RandomUtils.GetRandomNumber(1, 101);
+                            // If the ped is cuffed it will try to make one last attempt to run away
+                            if (randomNumber <= 25)
+                            {
+                                // First we will clear the primary from their current task in case it is performing the arrest animation they are not left performing it while suspect runs away
+                                // This IF is here just to verify that the ped is being arrested BY the person initiating the stop, otherwise it won't trigger the animation change if another officer is performing arrest
+                                if (World.GetDistance(player.Position, tsDriver.Position) <= 3f)
+                                { 
+                                    //player.Task.PlayAnimation("move_fall", "land_fall", 8f, -1, AnimationFlags.None);
+                                    player.Task.PlayAnimation("weapons@holster_1h", "holster", 8f, -1, AnimationFlags.None);
+                                }
+                                
+                                // It will have a 15 % chance to run and a 10% chance to walk away
+                                if (randomNumber <= 10)
+                                {
+                                    Screen.ShowSubtitle(getWalkingAfterArrestMessage());
+                                    tsDriver.Task.WanderAround();
+                                    
+                                }
+                                else
+                                {
+                                    Screen.ShowSubtitle(getFleeingAfterArrestMessage());
+                                    tsDriver.Task.FleeFrom(player, -1);
+                                }    
+                            }
                             return;
                         }
                             // First we clear all it's previous tasks
@@ -1962,11 +2045,8 @@ namespace TrafficStopPlugin
                         }
                         else
                         {   // If they are on foot, we'll se them to walk away.
-                            // UPDATE 2024 This is made to check if the ped has been cuffed, it will not make them wander around
-                            //if (!tsDriver.IsCuffed) // ALTERNATIVELY this can happen in the beginning so it doesn't clear all tasks cancelling as well the effects of putting the cuffs
-                            //{
-                                tsDriver.Task.WanderAround();
-                            //}
+
+                            tsDriver.Task.WanderAround();
                            
                         }
                             
