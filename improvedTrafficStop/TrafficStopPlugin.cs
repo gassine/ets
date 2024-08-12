@@ -4,8 +4,12 @@ using CitizenFX.Core.UI;
 using FivePD.API;
 using FivePD.API.Utils;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
+using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using static TrafficStopPlugin.TrafficStopPlugin;
 
 namespace TrafficStopPlugin
 {
@@ -61,6 +65,27 @@ namespace TrafficStopPlugin
             public static int MINUTES_10 = 10 * 60 * 1000;
         }
         // END OF PERSONALITY TYPES 
+
+        public class WARRANT_CHANCE
+        {
+            public static int LAWFUL = 10;
+            public static int COWARD = 30;
+            public static int EVIL = 50;
+        }
+
+        public class ILLEGAL_INVENTORY_ODDS
+        {
+            public static int LAWFUL = 10;
+            public static int COWARD = 50;
+            public static int EVIL = 100;
+        }
+
+        public class SCENARIO_TYPE
+        {
+            public static int LAWFUL = 100;
+            public static int COWARD = 300;
+            public static int EVIL = 200;
+        }
 
         public class ANIMATION_TYPE
         {
@@ -120,8 +145,68 @@ namespace TrafficStopPlugin
                         return;
                     }
 
+                    // Now that we will proceed with the Enhanced Traffic Stop we will get the personality that will be sent
+                    // Based on the type of personality we will assign a warrant or not
+                    // Lawful >= 100 < 200 || Evil >= 200 < 300 || Coward  >= 300
+                    int randomPersonality = getRandomPersonality();
+
+                    // Here we will determine what is the scenario type. Lawful, Evil or Coward
+                    int scenarioType = 0;
+                    if (randomPersonality >= 100 && randomPersonality < 200) { scenarioType = SCENARIO_TYPE.LAWFUL; } // 100-200 are the values for the lawful scenarios
+                    else if (randomPersonality >= 200 && randomPersonality < 300) { scenarioType = SCENARIO_TYPE.EVIL; } // 200-300 are the values for the evil scenarios
+                    else if (randomPersonality >= 300 && randomPersonality < 400) { scenarioType = SCENARIO_TYPE.LAWFUL; } // 300-400 are the values for the coward scenarios
+
+
+                    // Now we will also create a variable that will reflect the ODDS based on the type of scenario
+                    int randomWarrantChance = 0;
+                    // RandomWarrantChance will change how likely it should be for a suspect to have a warrant based on the type of scenario that it will be
+                    if (scenarioType == SCENARIO_TYPE.LAWFUL) { randomWarrantChance = WARRANT_CHANCE.LAWFUL; } // Here we are setting the warrant chance that will be added later
+                    else if (scenarioType == SCENARIO_TYPE.EVIL) { randomWarrantChance = WARRANT_CHANCE.EVIL; } // Here we are setting the warrant chance that will be added later
+                    else if (scenarioType == SCENARIO_TYPE.COWARD) { randomWarrantChance = WARRANT_CHANCE.COWARD; } // Here we are setting the warrant chance that will be added later
+
+
+
+                    // Now we will create a randomizer that we will use to compare against the odds of warrant creation
+                    int warrantRandomizer = RandomUtils.GetRandomNumber(1, 101);
+                    // First we will get the current data of the driver and the car from the traffic stop
+                    PedData newPedInfo = await tsDriver.GetData();
+                    VehicleData newVehicleData = await tsVehicle.GetData();
+                    if (warrantRandomizer <= randomWarrantChance) 
+                    {
+                        // Now we will change the address inside of his data and assign it a random city
+                        newPedInfo.Warrant = getRandomWarrant();
+                        // Lastly we update the PED
+                        tsDriver.SetData(newPedInfo);
+
+                        // NOTE: This is done here instead of a separate function because of some issues accessing the ped information from a function.
+                    }
+
+                    // Lastly we will assign a new type of inventory to the ped and their vehicle based on the type of scenario that's about to happen
+                    List<Item> illegalPedItems = new List<Item>();
+                    illegalPedItems = getIllegalPedInventory(scenarioType);
+
+                    // Now we will update the ped inventory
+                    if (illegalPedItems != null) 
+                    {
+                        newPedInfo.Items.AddRange(illegalPedItems);
+                        tsDriver.SetData(newPedInfo);
+                    }
+                    /* // NOTE This cannot be done to cars. Tried to create the code but it won't update inventory
+                    //List<Item> illegalCarItems = new List<Item>();
+                    //illegalCarItems = getIllegalCarInventory(scenarioType); // NOTE This cannot be done to cars. Tried to create the code but it won't update inventory
+                    // Now we will update the car inventory
+                    if (illegalCarItems != null) 
+                    {
+                        Screen.ShowNotification("Vehicle Items Not Null: " + illegalCarItems[0].Name);
+                        newVehicleData.Items.AddRange(illegalCarItems); 
+                        tsVehicle.SetData(newVehicleData);
+                        Screen.ShowNotification("VehicleData set");
+                    }
+                    */
+
+
                     // Now we will trigger the enhanced traffic stop
-                    await triggerScenario(getRandomPersonality(), tsDriver, player, tsVehicle);
+                    await triggerScenario(randomPersonality, tsDriver, player, tsVehicle);
 
                     // TEST BLOCK
                     //int scenarioNumber = getRandomPersonality();
@@ -163,21 +248,21 @@ namespace TrafficStopPlugin
 
             // Now we return a type of personality based on the number.
             // First we will determine if the personality is lawful, evil or coward
-            if (randomPersonality <= 70) // 70% chance of being lawful
+            if (randomPersonality <= 60) // 70% chance of being lawful
             {
                 if (randomReaction >= 1 && randomReaction <= 50) return PERSONALITY.LAWFUL.STAY;
                 else if (randomReaction > 50 && randomReaction <= 70) return PERSONALITY.LAWFUL.EXIT_VEHICLE;
                 else if (randomReaction > 70 && randomReaction <= 90) return PERSONALITY.LAWFUL.WALK_TOWARDS_OFFICER;
                 else if (randomReaction > 90 && randomReaction <= 100) return PERSONALITY.LAWFUL.WALK_AROUND;
             }   
-            else if (randomPersonality > 70 && randomPersonality <= 90) // 20% chance of being a coward
+            else if (randomPersonality > 61 && randomPersonality <= 85) // 15% chance of being a coward
             {
                 if (randomReaction >= 1 && randomReaction <= 25) return PERSONALITY.COWARD.FLEE_ON_FOOT;
                 else if (randomReaction > 25 && randomReaction <= 55) return PERSONALITY.COWARD.VEHICLE_FLEE_AFTER_OFFICER_EXITS_VEHICLE;
                 else if (randomReaction > 55 && randomReaction <= 85) return PERSONALITY.COWARD.VEHICLE_FLEE_AT_RANDOM;
                 else if (randomReaction > 85 && randomReaction <= 100) return PERSONALITY.COWARD.AIM_SUICIDE;
             }
-            else if (randomPersonality > 90 && randomPersonality <= 100) // And if the result is between 90 and 100 it will be evil
+            else if (randomPersonality > 86 && randomPersonality <= 100) // And if the result is between 86 and 100 it will be evil
             {
                 if (randomReaction >= 1 && randomReaction <= 20) return PERSONALITY.EVIL.SHOOT_WHEN_CLOSE;
                 else if (randomReaction > 20 && randomReaction <= 30) return PERSONALITY.EVIL.WALK_TOWARDS_SHOOTING;
@@ -1342,7 +1427,7 @@ namespace TrafficStopPlugin
             "~r~Suspect:~s~ You really thought you'd catch me huh?",
             "~r~Suspect:~s~ I'M SORRY I'M GONNA BE LATE FOR WORK!",
             "~r~Suspect:~s~ NO NO NO NO NO!!!",
-            "~r~Suspect:~s~ I'M TO PRETTY TO GO TO JAIL!",
+            "~r~Suspect:~s~ I'M TOO PRETTY TO GO TO JAIL!",
             "~r~Suspect:~s~ I CAN'T GO TO JAIL!!!",
             "~r~Suspect:~s~ I'M SORRY!!!",
             "~r~Suspect:~s~ SCREW YOU!",
@@ -1356,6 +1441,469 @@ namespace TrafficStopPlugin
             };
 
             return fleeingMessages.SelectRandom();
+        }
+
+        private string getRandomCity()
+        {
+            List<string> allCities = new List<string>()
+            {
+            "San Fierro",
+            "Las Venturas",
+            "Liberty City",
+            "Vice City",
+            };
+
+            return allCities.SelectRandom();
+        }
+
+        private string getRandomWarrant()
+        {
+            // First we will create a randomizer to determine if the warrant will be local or from out of state
+            int localWarrantOdds = RandomUtils.GetRandomNumber(1, 101);
+
+            string warrant = null;
+            // In this case we are giving a 30% chance of it being an out of state warrant
+            if(localWarrantOdds >= 70)
+            {
+                warrant = getRandomOutOfStateWarrant() + " from " + getRandomCity();
+            } 
+            else
+            {
+                warrant = getRandomLocalWarrant();
+            }
+
+            return warrant;
+        }
+
+        private string getRandomLocalWarrant()
+        {
+            List<string> allLocalWarrants = new List<string>()
+            {
+            "Arrest Warrant",
+            "Bench Warrant",
+            "Fugitive Warrant",
+            "Traffic Warrant",
+            "Protective Order Warrant",
+            "Detention Warrant",
+            "Federal Warrant",
+            };
+
+            return allLocalWarrants.SelectRandom();
+        }
+
+        private string getRandomOutOfStateWarrant()
+        {
+            List<string> allOutOfStateWarrants = new List<string>()
+            {
+            "Arrest Warrant",
+            "Extradition Warrant",
+            "Fugitive Warrant",
+            "Foreing Arrest Warrant",
+            };
+
+            return allOutOfStateWarrants.SelectRandom();
+        }
+
+        private List<Item> getIllegalPedInventory(int scenarioType)
+        {
+            // First we will make a series of randomizers to determine how many illegal items will be added and what are the odds of them being added
+            int triggerOdds = 0;
+            int numberOfItems = 0; 
+            int randomNumber = RandomUtils.GetRandomNumber(1, 101);
+            int counter = 0;
+
+            // Now we will determine the odds for everything based on the type of scenario
+            if (scenarioType == SCENARIO_TYPE.LAWFUL) 
+            {
+                triggerOdds = ILLEGAL_INVENTORY_ODDS.LAWFUL;
+                numberOfItems = RandomUtils.GetRandomNumber(0, 2); // 0 or 1 item, this is the structure
+            }
+            else if (scenarioType == SCENARIO_TYPE.COWARD)
+            {
+                triggerOdds = ILLEGAL_INVENTORY_ODDS.COWARD;
+                numberOfItems = RandomUtils.GetRandomNumber(0, 3);
+            }
+            else if (scenarioType == SCENARIO_TYPE.EVIL)
+            {
+                triggerOdds = ILLEGAL_INVENTORY_ODDS.EVIL;
+                numberOfItems = RandomUtils.GetRandomNumber(1, 6);
+            }
+
+            // At this point since the odds are not zero and there are items, we will start creating the item list
+            Item individualItem = new Item();
+            List<Item> allItems = new List<Item>();
+
+            // Now we will start the process of adding items
+            // Here we are going to check the odds of adding inventory
+            if(randomNumber <= triggerOdds)
+            {
+                // Now we will set a counter to process the while
+                counter = numberOfItems;
+
+                // This will add the proper number of items based on previous configuration
+                while(counter > 0)
+                {
+                    individualItem = new Item();
+                    individualItem.Name = getIllegalPedItem();
+                    individualItem.IsIllegal = true;
+                    allItems.Add(individualItem);
+                    counter--;
+                }
+            }
+
+            // Here we are going to check if the trigger odds is zero or the number of items is Zero we will return so we dont mess the ped inventory
+            if (allItems.Count == 0)
+            {
+                return null;
+            }
+            else
+            {
+                return allItems;
+            }            
+        }
+
+        private List<Item> getIllegalCarInventory(int scenarioType)
+        {
+            // First we will make a series of randomizers to determine how many illegal items will be added and what are the odds of them being added
+            int triggerOdds = 0;
+            int numberOfItems = 0;
+            int randomNumber = RandomUtils.GetRandomNumber(1, 101);
+            int counter = 0;
+
+            // Now we will determine the odds for everything based on the type of scenario
+            if (scenarioType == SCENARIO_TYPE.LAWFUL)
+            {
+                triggerOdds = ILLEGAL_INVENTORY_ODDS.LAWFUL;
+                numberOfItems = RandomUtils.GetRandomNumber(0, 2); // 0 or 1 item, this is the structure
+            }
+            else if (scenarioType == SCENARIO_TYPE.COWARD)
+            {
+                triggerOdds = ILLEGAL_INVENTORY_ODDS.COWARD;
+                numberOfItems = RandomUtils.GetRandomNumber(0, 3);
+            }
+            else if (scenarioType == SCENARIO_TYPE.EVIL)
+            {
+                triggerOdds = ILLEGAL_INVENTORY_ODDS.EVIL;
+                numberOfItems = RandomUtils.GetRandomNumber(1, 6);
+            }
+
+            // At this point since the odds are not zero and there are items, we will start creating the item list
+            Item individualItem = new Item();
+            List<Item> allItems = new List<Item>();
+
+            // Now we will start the process of adding items
+            // Here we are going to check the odds of adding inventory
+            if (randomNumber <= triggerOdds)
+            {
+                // Now we will set a counter to process the while
+                counter = numberOfItems;
+
+                // This will add the proper number of items based on previous configuration
+                while (counter > 0)
+                {
+                    individualItem = new Item();
+                    individualItem.Name = getIllegalVehicleItems();
+                    individualItem.IsIllegal = true;
+                    allItems.Add(individualItem);
+                    counter--;
+                }
+            }
+
+            // Here we are going to check if the trigger odds is zero or the number of items is Zero we will return so we dont mess the ped inventory
+            if (allItems.Count == 0)
+            {
+                return null;
+            }
+            else
+            {
+                return allItems;
+            }
+        }
+
+        private string getIllegalPedItem()
+        {
+            int ammunitionAmount = RandomUtils.GetRandomNumber(1, 20);
+            int cashAmount = RandomUtils.GetRandomNumber(2, 5);
+            int randomItem = RandomUtils.GetRandomNumber(2, 5);
+
+            List<string> allIllegalItems = new List<string>()
+            {
+                "Glock 19 handgun",
+                "Small bag of methamphetamine",
+                "$" + cashAmount.ToString() + " in cash",
+                "Switchblade knife",
+                "Burner phone with recent calls to 'Unknown Contact'",
+                "Stolen credit cards under different names",
+                "Fake social security card",
+                "Small notebook with addresses and phone numbers",
+                randomItem.ToString() + " Prepaid SIM cards",
+                "Unregistered cell phone",
+                "Flash drive with encrypted data",
+                "Brass knuckles",
+                "Prescription pills in unlabeled bottle",
+                "False-bottom water bottle",
+                "Key fob with hidden compartment",
+                "Police scanner app on phone",
+                "Map with marked locations",
+                randomItem.ToString() + " Jewelry without receipts",
+                "Driver's license with different names",
+                "Pack of cigarettes with hidden drugs",
+                "Handcuff keys",
+                "Fake business cards",
+                randomItem.ToString() + " Receipts from pawn shops",
+                "Prepaid debit cards",
+                "Security system jammer",
+                "Small bag of marijuana",
+                "Paper with coded messages",
+                randomItem.ToString() + " Gift cards under various names",
+                "False documents for different identities",
+                "Zip ties",
+                "Bag of stolen mail",
+                ammunitionAmount.ToString() + " Loose ammunition",
+                "Credit card skimmer",
+                "Disposable cell phone",
+                "Black ski mask",
+                "Set of lock picks",
+                "Fake passport",
+                "Money clip with large bills",
+                "Signal jammer",
+                "Envelope with cash",
+                randomItem.ToString() + " USB drives",
+                "Business card for a known criminal",
+                "List of codes",
+                "Fake police badge",
+                "Counterfeit money",
+                "Bag of synthetic drugs",
+                "Set of fake IDs",
+                "Metal knuckles",
+                "Credit card reader",
+                "Hidden compartment wallet",
+                "Small vial of liquid",
+                "Broken bag of Fentanyl",
+                "Bag of Fentanyl",
+                randomItem.ToString() + " Photos of potential targets",
+                "Fake employee ID",
+                "Glass cutter",
+                "Hidden microphone",
+                "Counterfeit stamps",
+                "Pen with hidden camera",
+                "Travel-sized mouthwash with hidden compartment",
+                "Miniature GPS tracker",
+                "Counterfeit tax stamps",
+                "Electronic lock pick",
+                "Black market prescription drugs",
+                "Illegal steroids",
+                "Stolen debit cards",
+                "Confidential documents",
+                "Small bag of heroin",
+                "Cloning device",
+                randomItem + " Smuggled diamonds",
+                "Spy pen",
+                "Bag of crystal meth",
+                "Key fob with tracking device",
+                "Concealed dagger",
+                randomItem + " Stolen car keys",
+                "Counterfeit driver's licenses",
+                "Forged checks",
+                "Unregistered GPS tracker",
+                "Unauthorized prescription medication",
+                "Pocket scale",
+                "Money clip with counterfeit bills",
+                "Phone with hacked software",
+                "Unregistered SIM cards",
+                "Fake work ID",
+                "Forged immigration documents",
+                "Unregistered medical supplies",
+                "Set of pick tools",
+                "Smuggled gemstones",
+                "Illegal surveillance device",
+                "Smuggled tobacco",
+                "Illegal hunting tags",
+                "Poison vial",
+                "Black market seeds",
+                "Microfilm",
+                "Spy glasses",
+                "Mini spy camera",
+                "Concealed firearm magazine",
+                randomItem + " Stolen gift cards",
+                "Phone with illegal apps",
+                "Unregistered phone SIM",
+                "Hidden lock picking device",
+                "Forged credit cards",
+                "Counterfeit postage stamps",
+                "Surveillance photos",
+                "Illegal pesticide samples",
+                "Portable drug test kit",
+                "Concealed needle",
+                "Hidden drug paraphernalia",
+                "Forged legal documents",
+                "Smuggled cash",
+                "Unauthorized medical equipment",
+                "Concealed shiv",
+                "Concealed razor blade",
+                "Unmarked vials",
+                "Counterfeit licenses",
+                randomItem + " Smuggled prescription drugs",
+                "Hidden poison",
+                "Concealed lock picking tool",
+                "Illegal drug samples",
+                "Hidden hacking device",
+                "Concealed taser ring",
+                "Unauthorized communication device",
+                "Hidden firearm parts",
+                randomItem + " Concealed narcotics",
+                "Smuggled technology",
+                "Hidden explosive material",
+                "Concealed drug balloon",
+                "Illegal gambling slips",
+                "Hidden scalpel",
+                "Illegal hunting permits",
+                "Smuggled precious metals",
+                "Counterfeit travel documents",
+                "Hidden drug injection kit",
+                randomItem + " Concealed syringes",
+                "Hidden modified phone",
+                "Counterfeit medical supplies",
+                "Unregistered passport",
+                "Smuggled biological samples",
+                "Hidden handcuff key",
+                "Unregistered legal papers",
+                "Concealed RFID scanner",
+                "Smuggling notes",
+                "Counterfeit education certificates",
+                "Hidden GPS device",
+                "FlipperZero",
+                "Concealed currency scanner",
+                "Hidden credit card duplicator",
+                "Unauthorized forensic equipment",
+                "Unregistered surveillance tools",
+                "Concealed drug analyzer",
+                "Concealed tracking chip",
+                "Unauthorized access cards",
+                "Hidden miniature explosives"
+            };
+
+            return allIllegalItems.SelectRandom();
+        }
+
+        private string getIllegalVehicleItems()
+        {
+
+            int drugKiloAmount = RandomUtils.GetRandomNumber(1, 5);
+            int ammunitionAmount = RandomUtils.GetRandomNumber(1, 3000);
+            int cashAmount = RandomUtils.GetRandomNumber(2, 300001);
+            int randomItem = RandomUtils.GetRandomNumber(2, 5);
+
+            List<string> allIllegalItems = new List<string>()
+            {
+                "AR-15 rifle",
+                "Box of 9mm ammunition",
+                "Box with " + ammunitionAmount.ToString() + " 5.56 rounds",
+                "Box with " +ammunitionAmount.ToString() + " 7.62 rounds",
+                "Box with " + ammunitionAmount.ToString() + " 9mm rounds",
+                "Digital scale with residue",
+                "Briefcase with $" + cashAmount.ToString(),
+                drugKiloAmount.ToString() + " kilos of methamphetamine",
+                drugKiloAmount.ToString() + " kilos of heroin",
+                "Broken bag of Fentanyl",
+                "Bag of Fentanyl",
+                "Stolen laptop",
+                "Stolen smartphone",
+                randomItem.ToString() + " Burner phones",
+                "Blueprints of a local bank",
+                "Set of fake license plates",
+                "Pipe bomb materials",
+                "Notebook with detailed personal information on local business owners",
+                "Silencer for a handgun",
+                "Large bag of marijuana",
+                "Fake IDs",
+                "Counterfeit money printing equipment",
+                "Bag of heroin",
+                drugKiloAmount.ToString() + " kilos of heroin",
+                "Briefcase with cash",
+                randomItem.ToString() + " Stolen credit cards",
+                "Hidden compartment with drugs",
+                "Police scanner",
+                "Forged vehicle registration",
+                "Handwritten list of drug clients",
+                "Box of counterfeit CDs",
+                "Unregistered firearm",
+                "Money laundering records",
+                randomItem.ToString() + " Jewelry without receipts",
+                "Stolen power tools",
+                "Unmarked bottle of pills",
+                "Night vision goggles",
+                "Explosive device",
+                "Fake passports",
+                "Illegal fireworks",
+                "Black duffel bag with cash",
+                "Bag of cocaine",
+                "Weapon cleaning kit",
+                randomItem.ToString() + " Fake business cards",
+                "Receipts for large cash transactions",
+                "Small bag of ecstasy pills",
+                "Bulletproof vest",
+                "Credit card skimming device",
+                "Wire cutters",
+                "Cash counting machine",
+                "Bag of stolen mail",
+                "Key making kit",
+                "Switchblade knives",
+                "Large quantities of tobacco products",
+                "Box of syringes",
+                "Prescription medications not prescribed to the suspect",
+                "Stolen car parts",
+                "Empty gun holster",
+                randomItem.ToString() + " Prepaid debit cards",
+                "USB drive with illegal content",
+                "High-powered binoculars",
+                "Gasoline canister",
+                "Briefcase with fake documents",
+                "Bag of synthetic drugs",
+                "List of contact names with illegal activities",
+                "Mobile Wi-Fi jammer",
+                "Stolen art pieces",
+                "Large knife",
+                "Bag of counterfeit goods",
+                "Hidden safe with drugs",
+                "Modified exhaust system for smuggling",
+                "Fake police badge",
+                "Illegal pesticide containers",
+                randomItem.ToString() + " Lock picking sets",
+                "Drug paraphernalia (pipes, bongs, etc.)",
+                "Unregistered SIM cards",
+                "False-bottom fuel tank",
+                "Hidden compartment with cash",
+                "Remote detonator",
+                "Forgery equipment",
+                "Multiple driver's licenses",
+                "Unmarked pills",
+                "Set of master keys",
+                "Explosive material residue",
+                "Counterfeit tax stamps",
+                "Box of illegal animal products",
+                "Empty plastic bags with drug residue",
+                "Forgery templates",
+                "Marked map of high-value targets",
+                "Encrypted radio",
+                "Foreign currency",
+                "Smuggled cigarettes",
+                "Money transfer receipts",
+                "Spray paint cans with tags",
+                "Rolling papers with drugs",
+                "Unlabeled chemical containers",
+                "Vehicle GPS tracker",
+                "Box of counterfeit goods",
+                "Box of prescription pads",
+                "Large bag of uncut drugs",
+                "Illegal wildlife parts",
+                "Bag of smuggled jewels",
+                "Chemicals for drug manufacturing",
+                "Black market medical supplies",
+                randomItem.ToString() + " Laptops with hacking software",
+            };
+
+            return allIllegalItems.SelectRandom();
         }
 
         private async Task clearEts()
