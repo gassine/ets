@@ -91,6 +91,9 @@ namespace TrafficStopPlugin
         {
             // This is just a recollection of the animation type dictionaries that we might end up using.
             public static string COMPLAIN = "misscommon@response";
+            public static string UNHOLSTER_MELEE = "anim@melee@switchblade@holster";
+            public static string UNHOLSTER_PISTOL = "weapons@holster_1h";
+
         }
 
         // Here we are setting that variable where we will track if the user is on a callout or not.
@@ -311,6 +314,7 @@ namespace TrafficStopPlugin
                     }
                     else
                     { // If they are not, they can only get a concealable blade.
+                        targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_MELEE, "unholster", 8f, -1, AnimationFlags.None);
                         targetPed.Weapons.Give(GetConcealedBlade(), 1, true, true);
                     }
                 }
@@ -545,12 +549,15 @@ namespace TrafficStopPlugin
                 targetPed.BlockPermanentEvents = true;
 
                 // Here we are going to do a random timer for the event to start. This will allow time to develop for the traffic stop.
-                await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.MINUTES_1, TIME.MINUTES_5)));
+                await (BaseScript.Delay(RandomUtils.GetRandomNumber(TIME.SECONDS_30, TIME.MINUTES_3)));
+
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
                 // Now we need to equip the ped with a gun, we will assign one based on odds and the status of the scenario
                 int randomNumber = RandomUtils.GetRandomNumber(1, 101);
 
+                // Here we'll have an extra variable that will determine if the weapon that the suspect got was a melee weapon or a firearm
+                bool weaponIsMelee = false;
                 // Here we need to check if the ped is in a car or is on foot
                 if (targetPed.IsInVehicle())
                 {
@@ -564,6 +571,7 @@ namespace TrafficStopPlugin
                     if (randomNumber >= 1 && randomNumber <= 30)
                     { // 80% chance of it getting a handgun
                         targetPed.Weapons.Give(GetConcealedBlade(), 1, true, true);
+                        weaponIsMelee = true;
                     }
                     else if (randomNumber > 30 && randomNumber <= 80)
                     { // 80% chance of it getting a handgun
@@ -578,13 +586,16 @@ namespace TrafficStopPlugin
                 {   // Here we are checking if the ped is currently cuffed
                     if (!targetPed.IsCuffed)
                     {
-                        if (randomNumber >= 1 && randomNumber <= 70)
-                        { // 80% chance of it getting a handgun
+                        if (randomNumber >= 1 && randomNumber <= 50)
+                        { // 50% chance of it getting a handgun
+                            targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_MELEE, "unholster", 8f, -1, AnimationFlags.None);
                             targetPed.Weapons.Give(getHandgun(), 200, true, true);                          
                         } 
                         else
                         {
+                            targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_PISTOL, "unholster", 8f, -1, AnimationFlags.None);
                             targetPed.Weapons.Give(GetConcealedBlade(), 1, true, true);
+                            weaponIsMelee = true;
                         }
                         
                     } 
@@ -609,7 +620,16 @@ namespace TrafficStopPlugin
                 await (BaseScript.Delay(1000));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
                 // And lastly, we trigger the action to shoot at the player
-                targetPed.Task.ShootAt(player);
+                // This is done this way because if the weapon is melee, it won't engage at the player with ShootAt function
+                if (weaponIsMelee)
+                {
+                    targetPed.Task.FightAgainst(player);
+                } 
+                else
+                {
+                    targetPed.Task.ShootAt(player);
+                }
+                             
 
                 await (BaseScript.Delay(TIME.SECONDS_20));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
@@ -695,6 +715,7 @@ namespace TrafficStopPlugin
                 {   // Here we are checking if the ped is currently cuffed
                     if (!targetPed.IsCuffed)
                     {
+                        targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_PISTOL, "unholster", 8f, -1, AnimationFlags.None);
                         targetPed.Weapons.Give(getHandgun(), 200, true, true);
                     }
                     else
@@ -815,6 +836,7 @@ namespace TrafficStopPlugin
 
                 targetPed.Task.ClearAll();
                 targetPed.ShootRate = 1000;
+                targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_PISTOL, "unholster", 8f, -1, AnimationFlags.None);
                 targetPed.Weapons.Give(getHandgun(), 200, true, true);
                 targetPed.Task.ShootAt(player);
 
@@ -944,6 +966,7 @@ namespace TrafficStopPlugin
                 }
                 else if (randomNumber >= 33 && randomNumber <= 66)
                 { // In this case, ped will commit suicide
+                    targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_PISTOL, "unholster", 8f, -1, AnimationFlags.None);
                     targetPed.Weapons.Give(WeaponHash.Pistol, 200, true, true);
                     targetPed.Task.ClearAll();                   
                     targetPed.Task.HandsUp(2000);
@@ -1923,8 +1946,13 @@ namespace TrafficStopPlugin
                     // Additionally, we are going to add a new task to the ped so it can go back to normal instead of just staying in the middle of the road
                     if(!isPedEmpty(tsDriver))
                     {
-                        // First we clear all it's previous tasks
-                        tsDriver.Task.ClearAll();
+                        // TEST: First we are going to check if the ped is in cuffs or not. If it is in cuffs we'll let them be as we don't want to wander around nor cancel the cuffing animation
+                        if (tsDriver.IsCuffed) // ALTERNATIVELY this can happen in the beginning so it doesn't clear all tasks cancelling as well the effects of putting the cuffs
+                        {
+                            return;
+                        }
+                            // First we clear all it's previous tasks
+                            tsDriver.Task.ClearAll();
 
                         // Now we determine if they are still in a car or not
                         if(tsVehicle != null && tsVehicle.NetworkId != 0)
@@ -1934,7 +1962,12 @@ namespace TrafficStopPlugin
                         }
                         else
                         {   // If they are on foot, we'll se them to walk away.
-                            tsDriver.Task.WanderAround();
+                            // UPDATE 2024 This is made to check if the ped has been cuffed, it will not make them wander around
+                            //if (!tsDriver.IsCuffed) // ALTERNATIVELY this can happen in the beginning so it doesn't clear all tasks cancelling as well the effects of putting the cuffs
+                            //{
+                                tsDriver.Task.WanderAround();
+                            //}
+                           
                         }
                             
                     }                 
