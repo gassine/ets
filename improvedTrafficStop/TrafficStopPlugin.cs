@@ -2019,7 +2019,7 @@ namespace TrafficStopPlugin
                                     player.Task.PlayAnimation("weapons@holster_1h", "holster", 8f, -1, AnimationFlags.None);
                                 }
                                 
-                                // It will have a 15 % chance to run and a 10% chance to walk away
+                                // It will have a 15 % chance to run and a 10% chance to walk away.
                                 if (randomNumber <= 10)
                                 {
                                     Screen.ShowSubtitle(getWalkingAfterArrestMessage());
