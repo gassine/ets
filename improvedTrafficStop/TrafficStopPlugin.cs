@@ -249,23 +249,26 @@ namespace TrafficStopPlugin
             int randomPersonality = RandomUtils.GetRandomNumber(1, 101);
             int randomReaction = RandomUtils.GetRandomNumber(1, 101);
 
+            //  TEST
+            Screen.ShowNotification("Personality number: " + randomPersonality);
+            // END TEST
             // Now we return a type of personality based on the number.
             // First we will determine if the personality is lawful, evil or coward
             if (randomPersonality <= 70) // 60% chance of being lawful
             {
-                if (randomReaction >= 1 && randomReaction <= 70) return PERSONALITY.LAWFUL.STAY;
+                if (randomReaction >= 1 && randomReaction < 70) return PERSONALITY.LAWFUL.STAY;
                 else if (randomReaction > 70 && randomReaction <= 80) return PERSONALITY.LAWFUL.EXIT_VEHICLE;
                 else if (randomReaction > 80 && randomReaction <= 90) return PERSONALITY.LAWFUL.WALK_TOWARDS_OFFICER;
                 else if (randomReaction > 90 && randomReaction <= 100) return PERSONALITY.LAWFUL.WALK_AROUND;
             }   
-            else if (randomPersonality > 71 && randomPersonality <= 90) // 15% chance of being a coward
+            else if (randomPersonality >= 70 && randomPersonality < 90) // 15% chance of being a coward
             {
                 if (randomReaction >= 1 && randomReaction <= 25) return PERSONALITY.COWARD.FLEE_ON_FOOT;
                 else if (randomReaction > 25 && randomReaction <= 55) return PERSONALITY.COWARD.VEHICLE_FLEE_AFTER_OFFICER_EXITS_VEHICLE;
                 else if (randomReaction > 55 && randomReaction <= 85) return PERSONALITY.COWARD.VEHICLE_FLEE_AT_RANDOM;
                 else if (randomReaction > 85 && randomReaction <= 100) return PERSONALITY.COWARD.AIM_SUICIDE;
             }
-            else if (randomPersonality > 90 && randomPersonality <= 100) // And if the result is between 86 and 100 it will be evil
+            else if (randomPersonality >= 90 && randomPersonality <= 100) // And if the result is between 86 and 100 it will be evil
             {
                 if (randomReaction >= 1 && randomReaction <= 20) return PERSONALITY.EVIL.SHOOT_WHEN_CLOSE;
                 else if (randomReaction > 20 && randomReaction <= 30) return PERSONALITY.EVIL.WALK_TOWARDS_SHOOTING;
@@ -1710,158 +1713,158 @@ namespace TrafficStopPlugin
             List<string> allIllegalItems = new List<string>()
             {
                 "Glock 19 handgun",
-                "Small bag of methamphetamine",
+                "small bag of methamphetamine",
                 "$" + cashAmount.ToString() + " in cash",
-                "Switchblade knife",
-                "Burner phone with recent calls to 'Unknown Contact'",
-                "Stolen credit cards under different names",
-                "Fake social security card",
-                "Small notebook with addresses and phone numbers",
-                randomItem.ToString() + " Prepaid SIM cards",
-                "Unregistered cell phone",
-                "Flash drive with encrypted data",
-                "Brass knuckles",
-                "Prescription pills in unlabeled bottle",
-                "False-bottom water bottle",
-                "Key fob with hidden compartment",
-                "Police scanner app on phone",
-                "Map with marked locations",
-                randomItem.ToString() + " Jewelry without receipts",
-                "Driver's license with different names",
-                "Pack of cigarettes with hidden drugs",
-                "Handcuff keys",
-                "Fake business cards",
-                randomItem.ToString() + " Receipts from pawn shops",
-                "Prepaid debit cards",
-                "Security system jammer",
-                "Small bag of marijuana",
-                "Paper with coded messages",
-                randomItem.ToString() + " Gift cards under various names",
-                "False documents for different identities",
-                "Zip ties",
-                "Bag of stolen mail",
-                ammunitionAmount.ToString() + " Loose ammunition",
-                "Credit card skimmer",
-                "Disposable cell phone",
-                "Black ski mask",
-                "Set of lock picks",
-                "Fake passport",
-                "Money clip with large bills",
-                "Signal jammer",
-                "Envelope with cash",
+                "switchblade knife",
+                "burner phone with recent calls to 'unknown contact'",
+                "stolen credit cards under different names",
+                "fake social security card",
+                "small notebook with addresses and phone numbers",
+                randomItem.ToString() + " prepaid SIM cards",
+                "unregistered cell phone",
+                "flash drive with encrypted data",
+                "brass knuckles",
+                "prescription pills in unlabeled bottle",
+                "false-bottom water bottle",
+                "key fob with hidden compartment",
+                "police scanner app on phone",
+                "map with marked locations",
+                randomItem.ToString() + " jewelry without receipts",
+                "driver's license with different names",
+                "pack of cigarettes with hidden drugs",
+                "handcuff keys",
+                "fake business cards",
+                randomItem.ToString() + " receipts from pawn shops",
+                "prepaid debit cards",
+                "security system jammer",
+                "small bag of marijuana",
+                "paper with coded messages",
+                randomItem.ToString() + " gift cards under various names",
+                "false documents for different identities",
+                "zip ties",
+                "bag of stolen mail",
+                ammunitionAmount.ToString() + " loose ammunition",
+                "credit card skimmer",
+                "disposable cell phone",
+                "black ski mask",
+                "set of lock picks",
+                "fake passport",
+                "money clip with large bills",
+                "signal jammer",
+                "envelope with cash",
                 randomItem.ToString() + " USB drives",
-                "Business card for a known criminal",
-                "List of codes",
-                "Fake police badge",
-                "Counterfeit money",
-                "Bag of synthetic drugs",
-                "Set of fake IDs",
-                "Metal knuckles",
-                "Credit card reader",
-                "Hidden compartment wallet",
-                "Small vial of liquid",
-                "Broken bag of Fentanyl",
-                "Bag of Fentanyl",
-                randomItem.ToString() + " Photos of potential targets",
-                "Fake employee ID",
-                "Glass cutter",
-                "Hidden microphone",
-                "Counterfeit stamps",
-                "Pen with hidden camera",
-                "Travel-sized mouthwash with hidden compartment",
-                "Miniature GPS tracker",
-                "Counterfeit tax stamps",
-                "Electronic lock pick",
-                "Black market prescription drugs",
-                "Illegal steroids",
-                "Stolen debit cards",
-                "Confidential documents",
-                "Small bag of heroin",
-                "Cloning device",
-                randomItem + " Smuggled diamonds",
-                "Spy pen",
-                "Bag of crystal meth",
-                "Key fob with tracking device",
-                "Concealed dagger",
-                randomItem + " Stolen car keys",
-                "Counterfeit driver's licenses",
-                "Forged checks",
-                "Unregistered GPS tracker",
-                "Unauthorized prescription medication",
-                "Pocket scale",
-                "Money clip with counterfeit bills",
-                "Phone with hacked software",
-                "Unregistered SIM cards",
-                "Fake work ID",
-                "Forged immigration documents",
-                "Unregistered medical supplies",
-                "Set of pick tools",
-                "Smuggled gemstones",
-                "Illegal surveillance device",
-                "Smuggled tobacco",
-                "Illegal hunting tags",
-                "Poison vial",
-                "Black market seeds",
-                "Microfilm",
-                "Spy glasses",
-                "Mini spy camera",
-                "Concealed firearm magazine",
-                randomItem + " Stolen gift cards",
-                "Phone with illegal apps",
-                "Unregistered phone SIM",
-                "Hidden lock picking device",
-                "Forged credit cards",
-                "Counterfeit postage stamps",
-                "Surveillance photos",
-                "Illegal pesticide samples",
-                "Portable drug test kit",
-                "Concealed needle",
-                "Hidden drug paraphernalia",
-                "Forged legal documents",
-                "Smuggled cash",
-                "Unauthorized medical equipment",
-                "Concealed shiv",
-                "Concealed razor blade",
-                "Unmarked vials",
-                "Counterfeit licenses",
-                randomItem + " Smuggled prescription drugs",
-                "Hidden poison",
-                "Concealed lock picking tool",
-                "Illegal drug samples",
-                "Hidden hacking device",
-                "Concealed taser ring",
-                "Unauthorized communication device",
-                "Hidden firearm parts",
-                randomItem + " Concealed narcotics",
-                "Smuggled technology",
-                "Hidden explosive material",
-                "Concealed drug balloon",
-                "Illegal gambling slips",
-                "Hidden scalpel",
-                "Illegal hunting permits",
-                "Smuggled precious metals",
-                "Counterfeit travel documents",
-                "Hidden drug injection kit",
-                randomItem + " Concealed syringes",
-                "Hidden modified phone",
-                "Counterfeit medical supplies",
-                "Unregistered passport",
-                "Smuggled biological samples",
-                "Hidden handcuff key",
-                "Unregistered legal papers",
-                "Concealed RFID scanner",
-                "Smuggling notes",
-                "Counterfeit education certificates",
-                "Hidden GPS device",
+                "business card for a known criminal",
+                "list of codes",
+                "fake police badge",
+                "counterfeit money",
+                "bag of synthetic drugs",
+                "set of fake IDs",
+                "metal knuckles",
+                "credit card reader",
+                "hidden compartment wallet",
+                "small vial of liquid",
+                "broken bag of fentanyl",
+                "bag of fentanyl",
+                randomItem.ToString() + " photos of potential targets",
+                "fake employee ID",
+                "glass cutter",
+                "hidden microphone",
+                "counterfeit stamps",
+                "pen with hidden camera",
+                "travel-sized mouthwash with hidden compartment",
+                "miniature GPS tracker",
+                "counterfeit tax stamps",
+                "electronic lock pick",
+                "black market prescription drugs",
+                "illegal steroids",
+                "stolen debit cards",
+                "confidential documents",
+                "small bag of heroin",
+                "cloning device",
+                randomItem + " smuggled diamonds",
+                "spy pen",
+                "bag of crystal meth",
+                "key fob with tracking device",
+                "concealed dagger",
+                randomItem + " stolen car keys",
+                "counterfeit driver's licenses",
+                "forged checks",
+                "unregistered GPS tracker",
+                "unauthorized prescription medication",
+                "pocket scale",
+                "money clip with counterfeit bills",
+                "phone with hacked software",
+                "unregistered SIM cards",
+                "fake work ID",
+                "forged immigration documents",
+                "unregistered medical supplies",
+                "set of pick tools",
+                "smuggled gemstones",
+                "illegal surveillance device",
+                "smuggled tobacco",
+                "illegal hunting tags",
+                "poison vial",
+                "black market seeds",
+                "microfilm",
+                "spy glasses",
+                "mini spy camera",
+                "concealed firearm magazine",
+                randomItem + " stolen gift cards",
+                "phone with illegal apps",
+                "unregistered phone SIM",
+                "hidden lock picking device",
+                "forged credit cards",
+                "counterfeit postage stamps",
+                "surveillance photos",
+                "illegal pesticide samples",
+                "portable drug test kit",
+                "concealed needle",
+                "hidden drug paraphernalia",
+                "forged legal documents",
+                "smuggled cash",
+                "unauthorized medical equipment",
+                "concealed shiv",
+                "concealed razor blade",
+                "unmarked vials",
+                "counterfeit licenses",
+                randomItem + " smuggled prescription drugs",
+                "hidden poison",
+                "concealed lock picking tool",
+                "illegal drug samples",
+                "hidden hacking device",
+                "concealed taser ring",
+                "unauthorized communication device",
+                "hidden firearm parts",
+                randomItem + " concealed narcotics",
+                "smuggled technology",
+                "hidden explosive material",
+                "concealed drug balloon",
+                "illegal gambling slips",
+                "hidden scalpel",
+                "illegal hunting permits",
+                "smuggled precious metals",
+                "counterfeit travel documents",
+                "hidden drug injection kit",
+                randomItem + " concealed syringes",
+                "hidden modified phone",
+                "counterfeit medical supplies",
+                "unregistered passport",
+                "smuggled biological samples",
+                "hidden handcuff key",
+                "unregistered legal papers",
+                "concealed RFID scanner",
+                "smuggling notes",
+                "counterfeit education certificates",
+                "hidden GPS device",
                 "FlipperZero",
-                "Concealed currency scanner",
-                "Hidden credit card duplicator",
-                "Unauthorized forensic equipment",
-                "Unregistered surveillance tools",
-                "Concealed drug analyzer",
-                "Concealed tracking chip",
-                "Unauthorized access cards",
-                "Hidden miniature explosives"
+                "concealed currency scanner",
+                "hidden credit card duplicator",
+                "unauthorized forensic equipment",
+                "unregistered surveillance tools",
+                "concealed drug analyzer",
+                "concealed tracking chip",
+                "unauthorized access cards",
+                "hidden miniature explosives"
             };
 
             return allIllegalItems.SelectRandom();
@@ -2009,7 +2012,7 @@ namespace TrafficStopPlugin
                         {
                             int randomNumber = RandomUtils.GetRandomNumber(1, 101);
                             // If the ped is cuffed it will try to make one last attempt to run away
-                            if (randomNumber <= 25)
+                            if (randomNumber <= 15)
                             {
                                 // First we will clear the primary from their current task in case it is performing the arrest animation they are not left performing it while suspect runs away
                                 // This IF is here just to verify that the ped is being arrested BY the person initiating the stop, otherwise it won't trigger the animation change if another officer is performing arrest
@@ -2019,12 +2022,11 @@ namespace TrafficStopPlugin
                                     player.Task.PlayAnimation("weapons@holster_1h", "holster", 8f, -1, AnimationFlags.None);
                                 }
                                 
-                                // It will have a 15 % chance to run and a 10% chance to walk away.
-                                if (randomNumber <= 10)
+                                // It will have a 5 % chance to run and a 10% chance to walk away.
+                                if (randomNumber <= 5)
                                 {
                                     Screen.ShowSubtitle(getWalkingAfterArrestMessage());
-                                    tsDriver.Task.WanderAround();
-                                    
+                                    tsDriver.Task.WanderAround();                                   
                                 }
                                 else
                                 {
@@ -2034,8 +2036,8 @@ namespace TrafficStopPlugin
                             }
                             return;
                         }
-                            // First we clear all it's previous tasks
-                            tsDriver.Task.ClearAll();
+                        // First we clear all it's previous tasks
+                        tsDriver.Task.ClearAll();
 
                         // Now we determine if they are still in a car or not
                         if(tsVehicle != null && tsVehicle.NetworkId != 0)
