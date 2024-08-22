@@ -249,9 +249,6 @@ namespace TrafficStopPlugin
             int randomPersonality = RandomUtils.GetRandomNumber(1, 101);
             int randomReaction = RandomUtils.GetRandomNumber(1, 101);
 
-            //  TEST
-            Screen.ShowNotification("Personality number: " + randomPersonality);
-            // END TEST
             // Now we return a type of personality based on the number.
             // First we will determine if the personality is lawful, evil or coward
             if (randomPersonality <= 70) // 60% chance of being lawful
