@@ -2007,6 +2007,10 @@ namespace TrafficStopPlugin
                         // TEST: First we are going to check if the ped is in cuffs or not. If it is in cuffs we'll let them be as we don't want to wander around nor cancel the cuffing animation
                         if (tsDriver.IsCuffed) // ALTERNATIVELY this can happen in the beginning so it doesn't clear all tasks cancelling as well the effects of putting the cuffs
                         {
+                            // First we will remove all the weapons from the ped to avoid issues with the ped firing when cuffed.
+                            tsDriver.Weapons.RemoveAll();
+                            
+                            // Now we will generate a random number
                             int randomNumber = RandomUtils.GetRandomNumber(1, 101);
                             // If the ped is cuffed it will try to make one last attempt to run away
                             if (randomNumber <= 15)
