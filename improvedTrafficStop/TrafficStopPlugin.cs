@@ -2106,7 +2106,7 @@ namespace TrafficStopPlugin
 
             // Now we will trigger some odds of the events happening.
             int eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
-            
+
             // Doing it this way so it's easier to read, the number is the percentage of chance 1 to 100
             if(!(eventHappeningOdds <= 10))
             {
@@ -2136,10 +2136,8 @@ namespace TrafficStopPlugin
             await (BaseScript.Delay(1000));
 
             // Now we are going to check if the vehicle selected actually has a driver, and that the driver is not the player.
-            if (randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || !isPlayer || isWanted)
-            {
-                // If it is we will skip this iteration
-                //Screen.ShowNotification("Driver doesnt exist or is the player");
+            if (randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || isPlayer || isWanted)
+            {               
                 return;
             }
 
@@ -2150,7 +2148,7 @@ namespace TrafficStopPlugin
             int randomScenarioOdds = RandomUtils.GetRandomNumber(1, 101);
             int randomNumber = RandomUtils.GetRandomNumber(1, 101);
             int randomScenario = 0;
-
+          
             if(randomScenarioOdds >= 1 && randomScenarioOdds < 40) 
             {
                 randomScenario = TRAFFIC_SCENARIO.SPEEDER;
@@ -2167,13 +2165,14 @@ namespace TrafficStopPlugin
             {
                 randomScenario = TRAFFIC_SCENARIO.STOLEN_CAR;
             }
-            
+
+            Screen.ShowNotification("Scenario: " + randomScenario);
             /////////////////
             /////////////////
             /////////////////
 
             // Now we will execute the code for each scenario
-            if(randomScenario == TRAFFIC_SCENARIO.SPEEDER)
+            if (randomScenario == TRAFFIC_SCENARIO.SPEEDER)
             {
                 // Now that we have the vehicle and the driver we'll change the vehicle mods so it can go faster
                 API.SetVehicleModKit(randomVehicle.Handle, 0); // Necessary before doing mods to the vehicle
