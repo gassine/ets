@@ -2114,7 +2114,7 @@ namespace TrafficStopPlugin
             }
 
             // Now we will select a random vehicle within 100 feet of the player
-            float radius = 200.0f * 0.3048f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+            float radius = 200.0f * 0.3048f; // The 200 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
             //float radius = 30f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
 
             // ALTERNATIVELY DO GAME POOL https://forum.cfx.re/t/how-to-get-all-vehicles-in-a-radius/4914412/4
@@ -2124,20 +2124,27 @@ namespace TrafficStopPlugin
             int selectedRandomVehicleIdentifier;
             Vehicle randomVehicle;
             Ped randomVehicleDriver;
+            bool isWanted;
+            bool isPlayer;
 
             // Here we are selecting a random vehicle within the RADIUS
             selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 70);
             randomVehicle = new Vehicle(selectedRandomVehicleIdentifier); 
             randomVehicleDriver = randomVehicle.Driver; // And here we are selecting the driver of the vehicle
+            isWanted = API.IsVehicleWanted(randomVehicle.Handle);
+            isPlayer = API.IsPedAPlayer(randomVehicleDriver.Handle);
+            await (BaseScript.Delay(1000));
 
             // Now we are going to check if the vehicle selected actually has a driver, and that the driver is not the player.
-            if (randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || API.IsPedAPlayer(randomVehicleDriver.Handle))
+            if (randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || !isPlayer || isWanted)
             {
                 // If it is we will skip this iteration
                 //Screen.ShowNotification("Driver doesnt exist or is the player");
                 return;
             }
 
+            // Here we are going to mark the vehicle so it doesn't receive any further assignments from this script
+            API.SetVehicleIsWanted(randomVehicle.Handle, true);
 
             // Now we will determine which scenario is going to execute
             int randomScenarioOdds = RandomUtils.GetRandomNumber(1, 101);
