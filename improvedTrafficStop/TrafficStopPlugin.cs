@@ -3,8 +3,11 @@ using CitizenFX.Core.Native;
 using CitizenFX.Core.UI;
 using FivePD.API;
 using FivePD.API.Utils;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
+using System.Linq;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -95,6 +98,27 @@ namespace TrafficStopPlugin
             public static string UNHOLSTER_PISTOL = "weapons@holster_1h";
 
         }
+        public class TRAFFIC_SCENARIO
+        {
+            public static int SPEEDER = 1;
+            public static int BROKEN_CAR = 2;
+            public static int AMBER_ALERT = 3;
+            public static int CAR_ACCIDENT = 4;
+            public static int HEART_ATTACK = 5;
+            public static int CAR_FLIPPED = 6;
+            public static int BODY_ON_ROAD = 7;
+            public static int STOLEN_CAR = 8;
+            public static int FLAT_TIRE = 9;
+        }
+
+        public class DRIVING_STYLES
+        {
+            public static int AVOID_PEDS_CARS_OBJECTS = 524732;
+            public static int RECKLESS_RUN_LIGHTS = 524604;
+            public static int AVOID_VEHICLES = 524556;
+            public static int NORMAL = 786603;
+            public static int RUSHED = 1074528293;
+        }
 
         // Here we are setting that variable where we will track if the user is on a callout or not.
         private bool enhancedTrafficStop = false;
@@ -110,6 +134,8 @@ namespace TrafficStopPlugin
             Tick += CheckForTrafficStop;
             // This will clear the enhanced traffic stop status if player is no longer on a traffic stop.
             Tick += clearEts;
+            // EXPERIMENTAL TEST: This will enable the speeders option
+            Tick += createSpeeder;
         }
 
 
@@ -1986,7 +2012,20 @@ namespace TrafficStopPlugin
 
             return allIllegalItems.SelectRandom();
         }
+        private int getRandomDrivingFlag()
+        {
+            List<int> allFlags = new List<int>()
+            {
+            524732, // With this the ped will avoid traffic, vehicles, peds, objects, but will still respect traffic ligts and use blinkers
+            524604, // Will avoid and won't stop at traffic lights
+            524556, // Will avoid vehicles and empty vehicles but will stop at peds and objects
+            786603, // Will drive normal
+            1074528293, // will drive rushed
+            };
 
+            return allFlags.SelectRandom();
+
+        }
         private async Task clearEts()
         {
             // This is to avoid ticks getting triggered 1000 times a second.
@@ -2009,7 +2048,6 @@ namespace TrafficStopPlugin
                         {
                             // First we will remove all the weapons from the ped to avoid issues with the ped firing when cuffed.
                             tsDriver.Weapons.RemoveAll();
-                            
                             // Now we will generate a random number
                             int randomNumber = RandomUtils.GetRandomNumber(1, 101);
                             // If the ped is cuffed it will try to make one last attempt to run away
@@ -2059,6 +2097,135 @@ namespace TrafficStopPlugin
             }
         }
 
+        ///
 
+        public async Task createSpeeder()
+        {
+            // We do this so the script will only execute once every 5 seconds
+            await (BaseScript.Delay(30000));
+
+            // Now we will trigger some odds of the events happening.
+            int eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
+            
+            // Doing it this way so it's easier to read, the number is the percentage of chance 1 to 100
+            if(!(eventHappeningOdds <= 10))
+            {
+                return;
+            }
+
+            // Now we will select a random vehicle within 100 feet of the player
+            float radius = 200.0f * 0.3048f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+            //float radius = 30f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+
+            // ALTERNATIVELY DO GAME POOL https://forum.cfx.re/t/how-to-get-all-vehicles-in-a-radius/4914412/4
+            // Now we setup the player, the vehicle and othe variables
+            player = Game.PlayerPed;
+            Vector3 playerPosition = player.Position;
+            int selectedRandomVehicleIdentifier;
+            Vehicle randomVehicle;
+            Ped randomVehicleDriver;
+
+            // Here we are selecting a random vehicle within the RADIUS
+            selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 70);
+            randomVehicle = new Vehicle(selectedRandomVehicleIdentifier); 
+            randomVehicleDriver = randomVehicle.Driver; // And here we are selecting the driver of the vehicle
+
+            // Now we are going to check if the vehicle selected actually has a driver, and that the driver is not the player.
+            if (randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || API.IsPedAPlayer(randomVehicleDriver.Handle))
+            {
+                // If it is we will skip this iteration
+                //Screen.ShowNotification("Driver doesnt exist or is the player");
+                return;
+            }
+
+
+            // Now we will determine which scenario is going to execute
+            int randomScenarioOdds = RandomUtils.GetRandomNumber(1, 101);
+            int randomNumber = RandomUtils.GetRandomNumber(1, 101);
+            int randomScenario = 0;
+
+            if(randomScenarioOdds >= 1 && randomScenarioOdds < 40) 
+            {
+                randomScenario = TRAFFIC_SCENARIO.SPEEDER;
+            } 
+            else if (randomScenarioOdds >= 40 && randomScenarioOdds < 65)
+            {
+                randomScenario = TRAFFIC_SCENARIO.BROKEN_CAR;
+            }
+            else if (randomScenarioOdds >= 65 && randomScenarioOdds < 90)
+            {
+                randomScenario = TRAFFIC_SCENARIO.FLAT_TIRE;
+            }
+            else if (randomScenarioOdds >= 90 && randomScenarioOdds <= 100)
+            {
+                randomScenario = TRAFFIC_SCENARIO.STOLEN_CAR;
+            }
+            
+            /////////////////
+            /////////////////
+            /////////////////
+
+            // Now we will execute the code for each scenario
+            if(randomScenario == TRAFFIC_SCENARIO.SPEEDER)
+            {
+                // Now that we have the vehicle and the driver we'll change the vehicle mods so it can go faster
+                API.SetVehicleModKit(randomVehicle.Handle, 0); // Necessary before doing mods to the vehicle
+                API.SetVehicleMod(randomVehicle.Handle, 11, 3, false); // Engine 
+                API.SetVehicleMod(randomVehicle.Handle, 18, 0, false); // Turbo
+                API.SetVehicleMod(randomVehicle.Handle, 13, 2, false); // Transmission 
+
+                // And now we will clear the vehicle tasks and give it the new tasks to drive away at max speed
+                API.ClearVehicleTasks(randomVehicle.Handle); // This is necessary so the vehicle will do what we tell it to do
+                API.TaskVehicleDriveWander(randomVehicleDriver.Handle, randomVehicle.Handle, 100f, getRandomDrivingFlag());
+                // NOTES:
+                // The game doesn't allow you to modify and retain the max speed of the vehicle apart from what is set on the handling file
+                // By setting the spsed to 100f we are telling the vehicle to drive at their maximum speed. So if the vehicle maximum speed is 60mph, it will do that
+                // The flag of the vehicle is obtained through https://vespura.com/fivem/drivingstyle/
+                return;
+            } 
+            else if(randomScenario == TRAFFIC_SCENARIO.BROKEN_CAR)
+            {
+                // This will have 2 potential scenarios, one where the car continues to drive like that and in the other one where the driver stops.
+                API.SetVehicleEngineHealth(randomVehicle.Handle, 300); // With this line we're setting the car to start smoking
+
+                if(randomNumber <= 50) // In this case the car will stop
+                {
+                    API.SetVehicleEngineOn(randomVehicle.Handle, false, false, true);
+                    API.SetVehicleDoorOpen(randomVehicle.Handle, 4, false, false);
+                    API.SetVehicleUndriveable(randomVehicle.Handle, true);
+                    API.ClearVehicleTasks(randomVehicle.Handle);
+                    API.ClearPedTasks(randomVehicleDriver.Handle);
+                    API.TaskStandStill(randomVehicleDriver.Handle, 999999);                               
+                }
+
+                return;
+            }
+            else if(randomScenario == TRAFFIC_SCENARIO.STOLEN_CAR)
+            {
+                // And now we will clear the vehicle tasks and give it the new tasks to drive away at max speed
+                API.ClearVehicleTasks(randomVehicle.Handle); // This is necessary so the vehicle will do what we tell it to do
+                API.TaskVehicleDriveWander(randomVehicleDriver.Handle, randomVehicle.Handle, 100f, DRIVING_STYLES.RECKLESS_RUN_LIGHTS);
+                API.SetVehicleAlarm(randomVehicle.Handle, true);
+                API.StartVehicleAlarm(randomVehicle.Handle);
+                API.SetVehicleIsStolen(randomVehicle.Handle, true);
+            }
+            else if(randomScenario == TRAFFIC_SCENARIO.FLAT_TIRE)
+            {
+                
+                if (randomNumber <= 25) // In this case the car will stop
+                {
+                    API.SetVehicleTyreBurst(randomVehicle.Handle, RandomUtils.GetRandomNumber(0, 6), true, 1000f);
+                    API.SetVehicleEngineOn(randomVehicle.Handle, false, false, true);
+                    API.SetVehicleUndriveable(randomVehicle.Handle, true);
+                    API.ClearVehicleTasks(randomVehicle.Handle);
+                    API.ClearPedTasks(randomVehicleDriver.Handle);
+                    API.TaskStandStill(randomVehicleDriver.Handle, 999999);
+                }
+                else
+                {
+                    API.SetVehicleTyreBurst(randomVehicle.Handle, RandomUtils.GetRandomNumber(0, 6), false, 500f);
+                }
+            }
+        }
     }
 }
