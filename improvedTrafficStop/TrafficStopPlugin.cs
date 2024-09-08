@@ -2183,7 +2183,7 @@ namespace TrafficStopPlugin
         public async Task setRandomVehicleTint()
         {
             // We do this so the script will only execute once every 5 seconds
-            await (BaseScript.Delay(6000));
+            await (BaseScript.Delay(60000));
 
             // The first thing that we will do is checking if the player is currently performing a traffic stop so we don't break their immersion
             if (Utilities.IsPlayerPerformingTrafficStop())
