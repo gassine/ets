@@ -2232,8 +2232,7 @@ namespace TrafficStopPlugin
 
             // Since we found that this is no player and it fell within the odds of executing, we'll set the vehicle tint at random
             API.SetVehicleModKit(randomVehicle.Handle, 0);
-            API.SetVehicleWindowTint(randomVehicle.Handle, TINT_LEVEL.PURE_BLACK);
-            //API.SetVehicleWindowTint(randomVehicle.Handle, getRandomTintLevel());
+            API.SetVehicleWindowTint(randomVehicle.Handle, getRandomTintLevel());
 
             // Lastly we add a 50% chance that this ped can turn into a decent speeder
             eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
