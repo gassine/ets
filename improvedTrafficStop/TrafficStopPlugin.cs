@@ -303,7 +303,7 @@ namespace TrafficStopPlugin
                 
                 // Now we will add a more risky personality based on the level of tint the ped has.
                 randomPersonality = randomPersonality + addedRisk;
-                Screen.ShowNotification("Increased chance: " + randomPersonality);
+                //Screen.ShowNotification("Increased chance: " + randomPersonality);
             }
 
             // Now we return a type of personality based on the number.
