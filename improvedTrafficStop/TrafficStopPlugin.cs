@@ -2219,6 +2219,11 @@ namespace TrafficStopPlugin
             selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 0); // Flag 0 because we want to make sure that the suspect is not on screen when this happens
             randomVehicle = new Vehicle(selectedRandomVehicleIdentifier);
             randomVehicleDriver = randomVehicle.Driver; // And here we are selecting the driver of the vehicle
+
+            // To clear up an issue where the script tries to find information on a vehicle that doesn't exist.
+            if (!randomVehicle.Exists())
+                return;
+
             isPlayer = API.IsPedAPlayer(randomVehicleDriver.Handle);
             vehicleTintLevel = API.GetVehicleWindowTint(randomVehicle.Handle);
             isWanted = API.IsVehicleWanted(randomVehicle.Handle);
@@ -2292,6 +2297,11 @@ namespace TrafficStopPlugin
             selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 70);
             randomVehicle = new Vehicle(selectedRandomVehicleIdentifier); 
             randomVehicleDriver = randomVehicle.Driver; // And here we are selecting the driver of the vehicle
+
+            // To clear up an issue where the script tries to find information on a vehicle that doesn't exist.
+            if (!randomVehicle.Exists())
+                return;
+
             isWanted = API.IsVehicleWanted(randomVehicle.Handle);
             isPlayer = API.IsPedAPlayer(randomVehicleDriver.Handle);
             await (BaseScript.Delay(1000));
