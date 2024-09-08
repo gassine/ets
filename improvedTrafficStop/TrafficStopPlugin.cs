@@ -90,14 +90,6 @@ namespace TrafficStopPlugin
             public static int EVIL = 200;
         }
 
-        public class ANIMATION_TYPE
-        {
-            // This is just a recollection of the animation type dictionaries that we might end up using.
-            public static string COMPLAIN = "misscommon@response";
-            public static string UNHOLSTER_MELEE = "anim@melee@switchblade@holster";
-            public static string UNHOLSTER_PISTOL = "weapons@holster_1h";
-
-        }
         public class TRAFFIC_SCENARIO
         {
             public static int SPEEDER = 1;
@@ -120,6 +112,14 @@ namespace TrafficStopPlugin
             public static int RUSHED = 1074528293;
         }
 
+        public class TINT_LEVEL
+        {
+            public const int PURE_BLACK = 1;
+            public const int LIMO = 5;
+            public const int DARK_SMOKE = 2;
+            public const int LIGHT_SMOKE = 3;
+        }
+
         // Here we are setting that variable where we will track if the user is on a callout or not.
         private bool enhancedTrafficStop = false;
         Ped tsDriver = null;
@@ -136,6 +136,8 @@ namespace TrafficStopPlugin
             Tick += clearEts;
             // EXPERIMENTAL TEST: This will enable the speeders option
             Tick += createSpeeder;
+            // EXPERIMENTAL TEST: This will enable setting random window tint on vehicles
+            Tick += setRandomVehicleTint;
         }
 
 
@@ -274,6 +276,35 @@ namespace TrafficStopPlugin
             // First we get a random number
             int randomPersonality = RandomUtils.GetRandomNumber(1, 101);
             int randomReaction = RandomUtils.GetRandomNumber(1, 101);
+            int addedRisk = 0;
+            int vehicleTintLevel = API.GetVehicleWindowTint(tsVehicle.Handle);
+
+            // NEW ADDITION This will increase the chance of a dangerous encounter on a vehicle with tinted windows
+            if (vehicleTintLevel > 0)
+            {
+                switch (vehicleTintLevel)
+                {
+                    case TINT_LEVEL.LIMO: 
+                        addedRisk = 10;
+                        break;
+
+                    case TINT_LEVEL.LIGHT_SMOKE:
+                        addedRisk = 15;
+                        break;
+
+                    case TINT_LEVEL.DARK_SMOKE:
+                        addedRisk = 20;
+                        break;
+
+                    case TINT_LEVEL.PURE_BLACK:
+                        addedRisk = 25;
+                        break;
+                }
+                
+                // Now we will add a more risky personality based on the level of tint the ped has.
+                randomPersonality = randomPersonality + addedRisk;
+                Screen.ShowNotification("Increased chance: " + randomPersonality);
+            }
 
             // Now we return a type of personality based on the number.
             // First we will determine if the personality is lawful, evil or coward
@@ -291,7 +322,7 @@ namespace TrafficStopPlugin
                 else if (randomReaction > 55 && randomReaction <= 85) return PERSONALITY.COWARD.VEHICLE_FLEE_AT_RANDOM;
                 else if (randomReaction > 85 && randomReaction <= 100) return PERSONALITY.COWARD.AIM_SUICIDE;
             }
-            else if (randomPersonality >= 90 && randomPersonality <= 100) // And if the result is between 86 and 100 it will be evil
+            else if (randomPersonality >= 90) // And if the result is between 86 and 100 it will be evil -- Including 100 in case value is over
             {
                 if (randomReaction >= 1 && randomReaction <= 20) return PERSONALITY.EVIL.SHOOT_WHEN_CLOSE;
                 else if (randomReaction > 20 && randomReaction <= 30) return PERSONALITY.EVIL.WALK_TOWARDS_SHOOTING;
@@ -340,7 +371,7 @@ namespace TrafficStopPlugin
                     }
                     else
                     { // If they are not, they can only get a concealable blade.
-                        targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_MELEE, "unholster", 8f, -1, AnimationFlags.None);
+                        targetPed.Task.PlayAnimation("anim@melee@switchblade@holster", "unholster", 8f, -1, AnimationFlags.None);
                         targetPed.Weapons.Give(GetConcealedBlade(), 1, true, true);
                     }
                 }
@@ -614,12 +645,12 @@ namespace TrafficStopPlugin
                     {
                         if (randomNumber >= 1 && randomNumber <= 50)
                         { // 50% chance of it getting a handgun
-                            targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_MELEE, "unholster", 8f, -1, AnimationFlags.None);
+                            targetPed.Task.PlayAnimation("anim@melee@switchblade@holster", "unholster", 8f, -1, AnimationFlags.None);
                             targetPed.Weapons.Give(getHandgun(), 200, true, true);                          
                         } 
                         else
                         {
-                            targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_PISTOL, "unholster", 8f, -1, AnimationFlags.None);
+                            targetPed.Task.PlayAnimation("weapons@holster_1h", "unholster", 8f, -1, AnimationFlags.None);
                             targetPed.Weapons.Give(GetConcealedBlade(), 1, true, true);
                             weaponIsMelee = true;
                         }
@@ -741,7 +772,7 @@ namespace TrafficStopPlugin
                 {   // Here we are checking if the ped is currently cuffed
                     if (!targetPed.IsCuffed)
                     {
-                        targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_PISTOL, "unholster", 8f, -1, AnimationFlags.None);
+                        targetPed.Task.PlayAnimation("weapons@holster_1h", "unholster", 8f, -1, AnimationFlags.None);
                         targetPed.Weapons.Give(getHandgun(), 200, true, true);
                     }
                     else
@@ -862,7 +893,7 @@ namespace TrafficStopPlugin
 
                 targetPed.Task.ClearAll();
                 targetPed.ShootRate = 1000;
-                targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_PISTOL, "unholster", 8f, -1, AnimationFlags.None);
+                targetPed.Task.PlayAnimation("weapons@holster_1h", "unholster", 8f, -1, AnimationFlags.None);
                 targetPed.Weapons.Give(getHandgun(), 200, true, true);
                 targetPed.Task.ShootAt(player);
 
@@ -992,7 +1023,7 @@ namespace TrafficStopPlugin
                 }
                 else if (randomNumber >= 33 && randomNumber <= 66)
                 { // In this case, ped will commit suicide
-                    targetPed.Task.PlayAnimation(ANIMATION_TYPE.UNHOLSTER_PISTOL, "unholster", 8f, -1, AnimationFlags.None);
+                    targetPed.Task.PlayAnimation("weapons@holster_1h", "unholster", 8f, -1, AnimationFlags.None);
                     targetPed.Weapons.Give(WeaponHash.Pistol, 200, true, true);
                     targetPed.Task.ClearAll();                   
                     targetPed.Task.HandsUp(2000);
@@ -1204,8 +1235,10 @@ namespace TrafficStopPlugin
                 await (BaseScript.Delay(1500));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
-                targetPed.Task.PlayAnimation(ANIMATION_TYPE.COMPLAIN, getComplainAnimation(), 8f, -1, AnimationFlags.None);
-                await (BaseScript.Delay(2000));
+                // Now we get the complain animation
+                String[] complainAnimation = getComplainAnim().Split(',');
+                targetPed.Task.PlayAnimation(complainAnimation[0], complainAnimation[1], 8f, -1, AnimationFlags.None);
+                await (BaseScript.Delay(10000));
                 if (isPedEmpty(targetPed)) { return; } // Necessary line after every delay before further action in case the ped was emptied so it doesn't crash the script by tasking Null.
 
                 targetPed.Task.ClearAll();
@@ -1442,6 +1475,7 @@ namespace TrafficStopPlugin
             return weapons.SelectRandom();
         }
 
+        /*
         private string getComplainAnimation()
         {
             List<string> complainAnimation = new List<string>()
@@ -1451,6 +1485,40 @@ namespace TrafficStopPlugin
             "numbnuts",
             "screw_you",
             "threaten",
+            };
+
+            return complainAnimation.SelectRandom();
+        }
+        */
+
+        private string getComplainAnim()
+        {
+            List<string> complainAnimation = new List<string>()
+            {
+            "misscommon@response,bring_it_on",
+            "misscommon@response,give_me_a_break",
+            "misscommon@response,numbnuts",
+            "misscommon@response,screw_you",
+            "misscommon@response,threaten",
+            "ramdom@bicycle_thief@ask_help,i_cant_catch_him_on_foot",
+            "missheistdockssetup1ig_13@start_idle,guard_beatup_startidle_guard2",
+            "missheistdockssetup1ig_13@start_idle,guard_beatup_startidle_guard1",
+            "missheistdockssetup1ig_13@start_idle,guard_beatup_startidle_dockworker",
+            "anim@amb@casino@valet_scenario@pose_c@,leg_scratch_v2_a_m_y_vinewood_01",
+            "anim@amb@waving@male,ground_wave",
+            "gestures@m@standing@casual,gesture_come_here_hard",
+            "gestures@m@standing@casual,gesture_damn",
+            "gestures@m@standing@casual,gesture_what_hard",
+            "misschinese2_crystalmaze,_stand_loop_b",
+            "mp_fm_intro_cut,world_human_standing_male_01_idle_02",
+            "oddjobs@taxi@argument,stand_off_biker_a",
+            "random@mugging3,handsup_standing_exit",
+            "random@robbery,stand_worried_female",
+            "reaction@male_stand@big_variations@idle_a,react_big_variations_d",
+            "reaction@male_stand@big_variations@idle_b,react_big_variations_f",
+            "reaction@male_stand@big_variations@idle_c,react_big_variations_o",
+            "reaction@male_stand@small_variations@d,react_small_variations_n",
+            "amb@world_human_bum_standing@twitchy@base,base",
             };
 
             return complainAnimation.SelectRandom();
@@ -2026,6 +2094,20 @@ namespace TrafficStopPlugin
             return allFlags.SelectRandom();
 
         }
+
+        private int getRandomTintLevel()
+        {
+            List<int> allTints = new List<int>()
+            {
+                TINT_LEVEL.PURE_BLACK,
+                TINT_LEVEL.LIMO,
+                TINT_LEVEL.DARK_SMOKE,
+                TINT_LEVEL.LIGHT_SMOKE,
+            };
+
+            return allTints.SelectRandom();
+        }
+
         private async Task clearEts()
         {
             // This is to avoid ticks getting triggered 1000 times a second.
@@ -2098,11 +2180,91 @@ namespace TrafficStopPlugin
         }
 
         ///
+        public async Task setRandomVehicleTint()
+        {
+            // We do this so the script will only execute once every 5 seconds
+            await (BaseScript.Delay(6000));
+
+            // The first thing that we will do is checking if the player is currently performing a traffic stop so we don't break their immersion
+            if (Utilities.IsPlayerPerformingTrafficStop())
+            {
+                return;
+            }
+
+            // Now we will trigger some odds of the events happening.
+            int eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
+
+            // Doing it this way so it's easier to read, the number is the percentage of chance 1 to 100
+            if (!(eventHappeningOdds <= 25))
+            {
+                return;
+            }
+
+            // Now we will select a random vehicle within 100 feet of the player
+            float radius = 200.0f * 0.3048f; // The 200 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+            //float radius = 30f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+
+            // ALTERNATIVELY DO GAME POOL https://forum.cfx.re/t/how-to-get-all-vehicles-in-a-radius/4914412/4
+            // Now we setup the player, the vehicle and othe variables
+            player = Game.PlayerPed;
+            Vector3 playerPosition = player.Position;
+            int selectedRandomVehicleIdentifier;
+            Vehicle randomVehicle;
+            Ped randomVehicleDriver;
+            bool isPlayer;
+            bool isWanted;
+            int vehicleTintLevel;
+
+            // Here we are selecting a random vehicle within the RADIUS
+            selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 0); // Flag 0 because we want to make sure that the suspect is not on screen when this happens
+            randomVehicle = new Vehicle(selectedRandomVehicleIdentifier);
+            randomVehicleDriver = randomVehicle.Driver; // And here we are selecting the driver of the vehicle
+            isPlayer = API.IsPedAPlayer(randomVehicleDriver.Handle);
+            vehicleTintLevel = API.GetVehicleWindowTint(randomVehicle.Handle);
+            isWanted = API.IsVehicleWanted(randomVehicle.Handle);
+            await (BaseScript.Delay(1000));
+
+            // Now we are going to check if the vehicle selected actually has a driver, and that the driver is not the player.
+            if (randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || isPlayer || vehicleTintLevel > 0 || isWanted)
+            {
+                return;
+            }
+
+            // Since we found that this is no player and it fell within the odds of executing, we'll set the vehicle tint at random
+            API.SetVehicleModKit(randomVehicle.Handle, 0);
+            API.SetVehicleWindowTint(randomVehicle.Handle, TINT_LEVEL.PURE_BLACK);
+            //API.SetVehicleWindowTint(randomVehicle.Handle, getRandomTintLevel());
+
+            // Lastly we add a 50% chance that this ped can turn into a decent speeder
+            eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
+            if (eventHappeningOdds <= 50)
+            { 
+                // And now we will clear the vehicle tasks and give it the new tasks to drive away at max speed
+                API.ClearVehicleTasks(randomVehicle.Handle); // This is necessary so the vehicle will do what we tell it to do
+                API.TaskVehicleDriveWander(randomVehicleDriver.Handle, randomVehicle.Handle, 100f, DRIVING_STYLES.NORMAL);
+            } 
+            else if (eventHappeningOdds <= 10) // 10% chance it will be a speeder that can disregard traffic and be aggressive
+            {
+                API.SetVehicleMod(randomVehicle.Handle, 11, 3, false); // Engine 
+                API.SetVehicleMod(randomVehicle.Handle, 18, 0, false); // Turbo
+                API.SetVehicleMod(randomVehicle.Handle, 13, 2, false); // Transmission 
+
+                // And now we will clear the vehicle tasks and give it the new tasks to drive away at max speed
+                API.ClearVehicleTasks(randomVehicle.Handle); // This is necessary so the vehicle will do what we tell it to do
+                API.TaskVehicleDriveWander(randomVehicleDriver.Handle, randomVehicle.Handle, 100f, getRandomDrivingFlag());
+            }
+        }
 
         public async Task createSpeeder()
         {
             // We do this so the script will only execute once every 5 seconds
             await (BaseScript.Delay(30000));
+
+            // The first thing that we will do is checking if the player is currently performing a traffic stop so we don't break their immersion
+            if (Utilities.IsPlayerPerformingTrafficStop())
+            {
+                return;
+            }
 
             // Now we will trigger some odds of the events happening.
             int eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
@@ -2166,7 +2328,6 @@ namespace TrafficStopPlugin
                 randomScenario = TRAFFIC_SCENARIO.STOLEN_CAR;
             }
 
-            Screen.ShowNotification("Scenario: " + randomScenario);
             /////////////////
             /////////////////
             /////////////////
