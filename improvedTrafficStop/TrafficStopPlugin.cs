@@ -12,6 +12,7 @@ using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using static CitizenFX.Core.UI.Screen;
 using static TrafficStopPlugin.TrafficStopPlugin;
 
 namespace TrafficStopPlugin
@@ -169,6 +170,24 @@ namespace TrafficStopPlugin
                     tsVehicle = Utilities.GetVehicleFromTrafficStop();
                     player = Game.PlayerPed;
 
+                    // First we will get the current data of the driver and the car from the traffic stop
+                    PedData newPedInfo = await tsDriver.GetData();
+                    VehicleData newVehicleData = await tsVehicle.GetData();
+
+                    // Now before we do anything else we will assign the ped a wasted or drugged personality based on the current state of the ped
+                    // First we check if the ped is drunk
+                    if(newPedInfo.BloodAlcoholLevel >= 0.01)
+                    {
+                        setPedDrunk(getDrunkAnimation(newPedInfo.BloodAlcoholLevel));
+                    }
+
+                    // Now we will check for the ped drugs
+                    if (isDrugged(newPedInfo.UsedDrugs))
+                    {
+                        setPetDrugged();
+                    }
+
+
                     // First we will check that the traffic stop did not turn into a pursuit right away so we can keep those happening as usual
                     if (tsDriver.IsFleeing)
                     {
@@ -199,9 +218,7 @@ namespace TrafficStopPlugin
 
                     // Now we will create a randomizer that we will use to compare against the odds of warrant creation
                     int warrantRandomizer = RandomUtils.GetRandomNumber(1, 101);
-                    // First we will get the current data of the driver and the car from the traffic stop
-                    PedData newPedInfo = await tsDriver.GetData();
-                    VehicleData newVehicleData = await tsVehicle.GetData();
+
                     if (warrantRandomizer <= randomWarrantChance) 
                     {
                         // Now we will change the address inside of his data and assign it a random city
@@ -1182,7 +1199,6 @@ namespace TrafficStopPlugin
                 targetPed.AlwaysKeepTask = true;
                 targetPed.BlockPermanentEvents = true;
 
-
                 // Here we will determine if the PED will exit at a random time, when the officer gets closer to the window, or when the officer leaves their vehicle
                 int randomNumber = RandomUtils.GetRandomNumber(1, 101);
 
@@ -2108,6 +2124,87 @@ namespace TrafficStopPlugin
             return allTints.SelectRandom();
         }
 
+        private string getRandomDruggedBehavior()
+        {
+            
+            List<string> allBehaviors = new List<string>()
+            {
+                "move_m@sad@a",
+                "move_m@crazy",
+                "move_m@caution",
+                "move_m@depressed@a",
+                "move_m@strung_out@",
+                "move_m@wading",
+            };
+
+            return allBehaviors.SelectRandom();
+        }
+
+        private bool isDrugged(PedData.Drugs[] usedDrugs)
+        {
+            if (usedDrugs.Length >= 1)
+            {
+                if (usedDrugs[0] == PedData.Drugs.Meth || usedDrugs[0] == PedData.Drugs.Cocaine || usedDrugs[0] == PedData.Drugs.Marijuana)
+                {
+                    return true;
+                }
+            }
+
+            if (usedDrugs.Length >= 2)
+            {
+                if (usedDrugs[1] == PedData.Drugs.Meth || usedDrugs[1] == PedData.Drugs.Cocaine || usedDrugs[1] == PedData.Drugs.Marijuana)
+                {
+                    return true;
+                }
+            }
+
+            if (usedDrugs.Length >= 3)
+            {
+                if (usedDrugs[2] == PedData.Drugs.Meth || usedDrugs[2] == PedData.Drugs.Cocaine || usedDrugs[2] == PedData.Drugs.Marijuana)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private string getDrunkAnimation(double bac)
+        {
+            if (bac >= 0.01 && bac <= 0.03) return "move_m@drunk@slightlydrunk";
+            else if (bac >= 0.04 && bac <= 0.07) return "move_m@buzzed";
+            else if (bac >= 0.08 && bac <= 0.1) return "move_m@drunk@moderatedrunk";
+            else if (bac >= 0.11) return "MOVE_M@DRUNK@VERYDRUNK";
+
+            return null;
+        }
+
+        private void setPedDrunk(string drunkAnimation)
+        {
+            // This section is necessary so it loads this into memory and allows us to apply it to the ped
+            if (!API.HasAnimSetLoaded(drunkAnimation))
+            {
+                API.RequestAnimSet(drunkAnimation);
+            }
+
+            // Here we are assigning the ped a walking and idle style
+            API.SetPedMovementClipset(tsDriver.Handle, drunkAnimation, 1f);
+        }
+
+        private void setPetDrugged()
+        {
+            string randomBehavior = getRandomDruggedBehavior();
+
+            // This section is necessary so it loads this into memory and allows us to apply it to the ped
+            if (!API.HasAnimSetLoaded(randomBehavior))
+            {
+                API.RequestAnimSet(randomBehavior);
+            }
+
+            // Here we are assigning the ped a walking and idle style
+            API.SetPedMovementClipset(tsDriver.Handle, randomBehavior, 1f);
+        }
+
         private async Task clearEts()
         {
             // This is to avoid ticks getting triggered 1000 times a second.
@@ -2202,7 +2299,7 @@ namespace TrafficStopPlugin
 
             // Now we will select a random vehicle within 100 feet of the player
             float radius = 200.0f * 0.3048f; // The 200 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
-            //float radius = 30f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+            //float radius = 50f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
 
             // ALTERNATIVELY DO GAME POOL https://forum.cfx.re/t/how-to-get-all-vehicles-in-a-radius/4914412/4
             // Now we setup the player, the vehicle and othe variables
@@ -2216,7 +2313,7 @@ namespace TrafficStopPlugin
             int vehicleTintLevel;
 
             // Here we are selecting a random vehicle within the RADIUS
-            selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 0); // Flag 0 because we want to make sure that the suspect is not on screen when this happens
+            selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 70); // Flag 0 because we want to make sure that the suspect is not on screen when this happens
             randomVehicle = new Vehicle(selectedRandomVehicleIdentifier);
             randomVehicleDriver = randomVehicle.Driver; // And here we are selecting the driver of the vehicle
 
@@ -2281,7 +2378,7 @@ namespace TrafficStopPlugin
 
             // Now we will select a random vehicle within 100 feet of the player
             float radius = 200.0f * 0.3048f; // The 200 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
-            //float radius = 30f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+            //float radius = 20f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
 
             // ALTERNATIVELY DO GAME POOL https://forum.cfx.re/t/how-to-get-all-vehicles-in-a-radius/4914412/4
             // Now we setup the player, the vehicle and othe variables
@@ -2371,7 +2468,19 @@ namespace TrafficStopPlugin
                     API.SetVehicleUndriveable(randomVehicle.Handle, true);
                     API.ClearVehicleTasks(randomVehicle.Handle);
                     API.ClearPedTasks(randomVehicleDriver.Handle);
-                    API.TaskStandStill(randomVehicleDriver.Handle, 999999);                               
+                    API.TaskStandStill(randomVehicleDriver.Handle, 999999);
+
+                    // TEST
+                    //randomVehicleDriver.Task.ClearAll();
+                    //randomVehicleDriver.AlwaysKeepTask = true;
+                    //randomVehicleDriver.BlockPermanentEvents = true;
+                    //await (BaseScript.Delay(1000));
+                    //randomVehicleDriver.Task.LeaveVehicle();
+                    //await (BaseScript.Delay(2000));
+                    //API.TaskGoStraightToCoordRelativeToEntity(randomVehicleDriver.Handle, randomVehicle.Handle, randomVehicle.Position.X+5, randomVehicle.Position.Y, randomVehicle.Position.Z, 0, 0);
+                    //await (BaseScript.Delay(3000));
+                    //randomVehicleDriver.Task.LookAt(randomVehicle, 99999);
+
                 }
 
                 return;
