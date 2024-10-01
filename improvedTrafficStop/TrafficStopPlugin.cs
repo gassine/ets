@@ -2172,26 +2172,27 @@ namespace TrafficStopPlugin
         private string getDrunkAnimation(double bac)
         {
             if (bac >= 0.01 && bac <= 0.03) return "move_m@drunk@slightlydrunk";
-            else if (bac >= 0.04 && bac <= 0.07) return "move_m@buzzed";
+            else if (bac >= 0.04 && bac <= 0.07) return "move_m@drunk@a";
             else if (bac >= 0.08 && bac <= 0.1) return "move_m@drunk@moderatedrunk";
-            else if (bac >= 0.11) return "MOVE_M@DRUNK@VERYDRUNK";
+            else if (bac >= 0.11) return "move_m@drunk@verydrunk";
 
             return null;
         }
 
-        private void setPedDrunk(string drunkAnimation)
+        private async void setPedDrunk(string drunkAnimation)
         {
             // This section is necessary so it loads this into memory and allows us to apply it to the ped
             if (!API.HasAnimSetLoaded(drunkAnimation))
             {
                 API.RequestAnimSet(drunkAnimation);
+                await BaseScript.Delay(1000);
             }
 
             // Here we are assigning the ped a walking and idle style
-            API.SetPedMovementClipset(tsDriver.Handle, drunkAnimation, 1f);
+            API.SetPedMovementClipset(tsDriver.Handle, drunkAnimation, 0.2f);
         }
 
-        private void setPetDrugged()
+        private async void setPetDrugged()
         {
             string randomBehavior = getRandomDruggedBehavior();
 
@@ -2199,10 +2200,11 @@ namespace TrafficStopPlugin
             if (!API.HasAnimSetLoaded(randomBehavior))
             {
                 API.RequestAnimSet(randomBehavior);
+                await BaseScript.Delay(1000);
             }
 
             // Here we are assigning the ped a walking and idle style
-            API.SetPedMovementClipset(tsDriver.Handle, randomBehavior, 1f);
+            API.SetPedMovementClipset(tsDriver.Handle, randomBehavior, 0.2f);
         }
 
         private async Task clearEts()
