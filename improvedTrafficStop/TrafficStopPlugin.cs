@@ -2313,6 +2313,7 @@ namespace TrafficStopPlugin
             bool isPlayer;
             bool isWanted;
             int vehicleTintLevel;
+            bool driverSeatIsFree;
 
             // Here we are selecting a random vehicle within the RADIUS
             selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 70); // Flag 0 because we want to make sure that the suspect is not on screen when this happens
@@ -2326,10 +2327,13 @@ namespace TrafficStopPlugin
             isPlayer = API.IsPedAPlayer(randomVehicleDriver.Handle);
             vehicleTintLevel = API.GetVehicleWindowTint(randomVehicle.Handle);
             isWanted = API.IsVehicleWanted(randomVehicle.Handle);
+            driverSeatIsFree = API.IsVehicleSeatFree(randomVehicle.Handle, -1); // This is checking for position -1 (driver) to see if the seat is free or not.
+            // This is an alternative way to check if there is a driver and cover the border case triggering the bug of vehicles getting stuff without a driver.
+
             await (BaseScript.Delay(1000));
 
             // Now we are going to check if the vehicle selected actually has a driver, and that the driver is not the player.
-            if (randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || isPlayer || vehicleTintLevel > 0 || isWanted)
+            if (driverSeatIsFree || randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || isPlayer || vehicleTintLevel > 0 || isWanted)
             {
                 return;
             }
