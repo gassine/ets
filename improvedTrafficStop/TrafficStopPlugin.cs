@@ -325,7 +325,7 @@ namespace TrafficStopPlugin
 
             // Now we return a type of personality based on the number.
             // First we will determine if the personality is lawful, evil or coward
-            if (randomPersonality <= 70) // 60% chance of being lawful
+            if (randomPersonality <= 70) // 70% chance of being lawful
             {
                 if (randomReaction >= 1 && randomReaction < 70) return PERSONALITY.LAWFUL.STAY;
                 else if (randomReaction > 70 && randomReaction <= 80) return PERSONALITY.LAWFUL.EXIT_VEHICLE;
@@ -2361,7 +2361,9 @@ namespace TrafficStopPlugin
         public async Task createSpeeder()
         {
             // We do this so the script will only execute once every 5 seconds
-            await (BaseScript.Delay(30000));
+            await (BaseScript.Delay(30000)); 
+            // TEST 
+            //await (BaseScript.Delay(2000));
 
             // The first thing that we will do is checking if the player is currently performing a traffic stop so we don't break their immersion
             if (Utilities.IsPlayerPerformingTrafficStop())
@@ -2373,13 +2375,18 @@ namespace TrafficStopPlugin
             int eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
 
             // Doing it this way so it's easier to read, the number is the percentage of chance 1 to 100
-            if(!(eventHappeningOdds <= 10))
+            //TEST
+
+            //if (!(eventHappeningOdds <= 100))
+            if (!(eventHappeningOdds <= 10))
             {
                 return;
             }
 
             // Now we will select a random vehicle within 100 feet of the player
             float radius = 200.0f * 0.3048f; // The 200 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+            // TEST VALUE
+            // float radius = 10.0f * 0.3048f;
             //float radius = 20f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
 
             // ALTERNATIVELY DO GAME POOL https://forum.cfx.re/t/how-to-get-all-vehicles-in-a-radius/4914412/4
@@ -2391,22 +2398,27 @@ namespace TrafficStopPlugin
             Ped randomVehicleDriver;
             bool isWanted;
             bool isPlayer;
+            bool driverSeatIsFree;
 
             // Here we are selecting a random vehicle within the RADIUS
             selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 70);
             randomVehicle = new Vehicle(selectedRandomVehicleIdentifier); 
             randomVehicleDriver = randomVehicle.Driver; // And here we are selecting the driver of the vehicle
-
+            
             // To clear up an issue where the script tries to find information on a vehicle that doesn't exist.
             if (!randomVehicle.Exists())
                 return;
 
             isWanted = API.IsVehicleWanted(randomVehicle.Handle);
             isPlayer = API.IsPedAPlayer(randomVehicleDriver.Handle);
+            driverSeatIsFree = API.IsVehicleSeatFree(randomVehicle.Handle, -1); // This is checking for position -1 (driver) to see if the seat is free or not.
+            // This is an alternative way to check if there is a driver and cover the border case triggering the bug of vehicles getting stuff without a driver.
+
+            // We are giving it some time now for it to load.
             await (BaseScript.Delay(1000));
 
             // Now we are going to check if the vehicle selected actually has a driver, and that the driver is not the player.
-            if (randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || isPlayer || isWanted)
+            if (driverSeatIsFree || randomVehicleDriver == null || !randomVehicleDriver.Exists() || randomVehicleDriver == player || isPlayer || isWanted)
             {               
                 return;
             }
