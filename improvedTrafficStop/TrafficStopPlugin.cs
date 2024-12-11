@@ -173,17 +173,20 @@ namespace TrafficStopPlugin
                     // First we will get the current data of the driver and the car from the traffic stop
                     PedData newPedInfo = await tsDriver.GetData();
                     VehicleData newVehicleData = await tsVehicle.GetData();
+                    int addedRisk = 0;
 
                     // Now before we do anything else we will assign the ped a wasted or drugged personality based on the current state of the ped
                     // First we check if the ped is drunk
                     if(newPedInfo.BloodAlcoholLevel >= 0.01)
                     {
+                        addedRisk += RandomUtils.GetRandomNumber(1, 21); ;
                         setPedDrunk(getDrunkAnimation(newPedInfo.BloodAlcoholLevel));
                     }
 
                     // Now we will check for the ped drugs
                     if (isDrugged(newPedInfo.UsedDrugs))
                     {
+                        addedRisk += RandomUtils.GetRandomNumber(1, 41);
                         setPetDrugged();
                     }
 
@@ -198,7 +201,7 @@ namespace TrafficStopPlugin
                     // Now that we will proceed with the Enhanced Traffic Stop we will get the personality that will be sent
                     // Based on the type of personality we will assign a warrant or not
                     // Lawful >= 100 < 200 || Evil >= 200 < 300 || Coward  >= 300
-                    int randomPersonality = getRandomPersonality();
+                    int randomPersonality = getRandomPersonality(addedRisk);
 
                     // Here we will determine what is the scenario type. Lawful, Evil or Coward
                     int scenarioType = 0;
@@ -284,7 +287,7 @@ namespace TrafficStopPlugin
             await Task.FromResult(0);
         }
 
-        private int getRandomPersonality()
+        private int getRandomPersonality(int addedRisk)
         {
             // IMPLENTATION NOTES:
             // STEP 2: - Adde the personality assignment with the percentage possibility to this function
@@ -293,7 +296,6 @@ namespace TrafficStopPlugin
             // First we get a random number
             int randomPersonality = RandomUtils.GetRandomNumber(1, 101);
             int randomReaction = RandomUtils.GetRandomNumber(1, 101);
-            int addedRisk = 0;
             int vehicleTintLevel = API.GetVehicleWindowTint(tsVehicle.Handle);
 
             // NEW ADDITION This will increase the chance of a dangerous encounter on a vehicle with tinted windows
@@ -302,19 +304,19 @@ namespace TrafficStopPlugin
                 switch (vehicleTintLevel)
                 {
                     case TINT_LEVEL.LIMO: 
-                        addedRisk = 10;
+                        addedRisk += 10;
                         break;
 
                     case TINT_LEVEL.LIGHT_SMOKE:
-                        addedRisk = 15;
+                        addedRisk += 15;
                         break;
 
                     case TINT_LEVEL.DARK_SMOKE:
-                        addedRisk = 20;
+                        addedRisk += 20;
                         break;
 
                     case TINT_LEVEL.PURE_BLACK:
-                        addedRisk = 25;
+                        addedRisk =+ 25;
                         break;
                 }
                 
@@ -322,6 +324,7 @@ namespace TrafficStopPlugin
                 randomPersonality = randomPersonality + addedRisk;
                 //Screen.ShowNotification("Increased chance: " + randomPersonality);
             }
+
 
             // Now we return a type of personality based on the number.
             // First we will determine if the personality is lawful, evil or coward
@@ -2283,6 +2286,8 @@ namespace TrafficStopPlugin
         {
             // We do this so the script will only execute once every 5 seconds
             await (BaseScript.Delay(60000));
+            // TEST
+            //await (BaseScript.Delay(3000));
 
             // The first thing that we will do is checking if the player is currently performing a traffic stop so we don't break their immersion
             if (Utilities.IsPlayerPerformingTrafficStop())
@@ -2294,6 +2299,9 @@ namespace TrafficStopPlugin
             int eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
 
             // Doing it this way so it's easier to read, the number is the percentage of chance 1 to 100
+
+            // TEST
+            //if (!(eventHappeningOdds <= 100))
             if (!(eventHappeningOdds <= 25))
             {
                 return;
@@ -2301,6 +2309,9 @@ namespace TrafficStopPlugin
 
             // Now we will select a random vehicle within 100 feet of the player
             float radius = 200.0f * 0.3048f; // The 200 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+            // TEST
+            //float radius = 20.0f * 0.3048f; // The 200 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
+
             //float radius = 50f; // The 100 is the number of feets I want to use as a reference, the other part is just so we can give the script the equivalency
 
             // ALTERNATIVELY DO GAME POOL https://forum.cfx.re/t/how-to-get-all-vehicles-in-a-radius/4914412/4
@@ -2316,7 +2327,7 @@ namespace TrafficStopPlugin
             bool driverSeatIsFree;
 
             // Here we are selecting a random vehicle within the RADIUS
-            selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 70); // Flag 0 because we want to make sure that the suspect is not on screen when this happens
+            selectedRandomVehicleIdentifier = API.GetRandomVehicleInSphere(player.Position.X, player.Position.Y, player.Position.Z, radius, 0, 70); // Flag 70 so it works
             randomVehicle = new Vehicle(selectedRandomVehicleIdentifier);
             randomVehicleDriver = randomVehicle.Driver; // And here we are selecting the driver of the vehicle
 
@@ -2344,7 +2355,7 @@ namespace TrafficStopPlugin
 
             // Lastly we add a 50% chance that this ped can turn into a decent speeder
             eventHappeningOdds = RandomUtils.GetRandomNumber(1, 101);
-            if (eventHappeningOdds <= 50)
+            if (eventHappeningOdds > 10 && eventHappeningOdds <= 50)
             { 
                 // And now we will clear the vehicle tasks and give it the new tasks to drive away at max speed
                 API.ClearVehicleTasks(randomVehicle.Handle); // This is necessary so the vehicle will do what we tell it to do
