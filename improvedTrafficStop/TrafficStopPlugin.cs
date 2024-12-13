@@ -316,7 +316,7 @@ namespace TrafficStopPlugin
                         break;
 
                     case TINT_LEVEL.PURE_BLACK:
-                        addedRisk =+ 25;
+                        addedRisk += 25;
                         break;
                 }
                 
