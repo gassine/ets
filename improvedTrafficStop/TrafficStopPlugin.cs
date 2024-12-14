@@ -304,19 +304,19 @@ namespace TrafficStopPlugin
                 switch (vehicleTintLevel)
                 {
                     case TINT_LEVEL.LIMO: 
-                        addedRisk += 10;
+                        addedRisk += RandomUtils.GetRandomNumber(1, 11);
                         break;
 
                     case TINT_LEVEL.LIGHT_SMOKE:
-                        addedRisk += 15;
+                        addedRisk += RandomUtils.GetRandomNumber(1, 16);
                         break;
 
                     case TINT_LEVEL.DARK_SMOKE:
-                        addedRisk += 20;
+                        addedRisk += RandomUtils.GetRandomNumber(1, 21);
                         break;
 
                     case TINT_LEVEL.PURE_BLACK:
-                        addedRisk += 25;
+                        addedRisk += RandomUtils.GetRandomNumber(1, 26);
                         break;
                 }
                 
@@ -328,21 +328,21 @@ namespace TrafficStopPlugin
 
             // Now we return a type of personality based on the number.
             // First we will determine if the personality is lawful, evil or coward
-            if (randomPersonality <= 70) // 70% chance of being lawful
+            if (randomPersonality < 85) // 85% chance of being lawful
             {
                 if (randomReaction >= 1 && randomReaction < 70) return PERSONALITY.LAWFUL.STAY;
                 else if (randomReaction > 70 && randomReaction <= 80) return PERSONALITY.LAWFUL.EXIT_VEHICLE;
                 else if (randomReaction > 80 && randomReaction <= 90) return PERSONALITY.LAWFUL.WALK_TOWARDS_OFFICER;
                 else if (randomReaction > 90 && randomReaction <= 100) return PERSONALITY.LAWFUL.WALK_AROUND;
             }   
-            else if (randomPersonality >= 70 && randomPersonality < 90) // 15% chance of being a coward
+            else if (randomPersonality >= 85 && randomPersonality < 95) // 10% chance of being a coward
             {
                 if (randomReaction >= 1 && randomReaction <= 25) return PERSONALITY.COWARD.FLEE_ON_FOOT;
                 else if (randomReaction > 25 && randomReaction <= 55) return PERSONALITY.COWARD.VEHICLE_FLEE_AFTER_OFFICER_EXITS_VEHICLE;
                 else if (randomReaction > 55 && randomReaction <= 85) return PERSONALITY.COWARD.VEHICLE_FLEE_AT_RANDOM;
                 else if (randomReaction > 85 && randomReaction <= 100) return PERSONALITY.COWARD.AIM_SUICIDE;
             }
-            else if (randomPersonality >= 90) // And if the result is between 86 and 100 it will be evil -- Including 100 in case value is over
+            else if (randomPersonality >= 95) // And if the result is between 95 and 100 it will be evil -- Including 100 in case value is over
             {
                 if (randomReaction >= 1 && randomReaction <= 20) return PERSONALITY.EVIL.SHOOT_WHEN_CLOSE;
                 else if (randomReaction > 20 && randomReaction <= 30) return PERSONALITY.EVIL.WALK_TOWARDS_SHOOTING;
